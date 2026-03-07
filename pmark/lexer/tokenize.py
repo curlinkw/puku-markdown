@@ -1,7 +1,7 @@
 from pmark.tokens import Token
 from pmark.re_patterns import LINE_ENDINGS_RE
 from pmark.constants import NULL_CHARACTER, UNICODE_REPLACEMENT_CHARACTER
-from pmark.lexer.block_state import BlockLexerState
+from pmark.lexer.block.state import BlockLexerState
 
 
 def tokenize(
@@ -21,14 +21,5 @@ def tokenize(
     # CommonMark treats all line ending styles as equivalent, so this transformation
     # is spec-compliant and simplifies the parser by only needing to handle \n.
     source = LINE_ENDINGS_RE.sub("\n", source)
-
-    block_state = BlockLexerState(source=source)
-
-    while block_state.has_more_lines:
-        if not block_state.skip_blank_lines():
-            break
-
-        if block_state.is_line_outdented(block_state.current_lineno):
-            break
 
     return []
