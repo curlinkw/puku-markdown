@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from pmark.tokens import Token
 from pmark.pattern_predicates import is_space_or_tab
 from pmark.constants import COMMONMARK_TAB_STOP
-from pmark.line_span import LineSpan
 
 
 @dataclass(slots=True)
@@ -79,13 +78,6 @@ class BlockLexerState:
     Total number of real lines in the source (excluding the final fake entry).
     """
 
-    current_line_span: LineSpan = field(
-        init=False
-    )  # (StartLine, Endline) inside tokenize func
-    """
-    Current line span being processed.
-    """
-
     def _compute_line_boundaries(self) -> None:
         """
         Compute line boundaries.
@@ -145,8 +137,6 @@ class BlockLexerState:
         # exclude the final fake entry
         self.line_count = len(self.line_start_indices) - 1
 
-        self.current_line_span = LineSpan(start_lineno=0, end_lineno=self.line_count)
-
     def __post_init__(self):
         """Just compute line boundaries."""
         self._compute_line_boundaries()
@@ -187,25 +177,21 @@ class BlockLexerState:
             self.line_count,
         )
 
-    def skip_blank_lines(self) -> bool:
-        """Advance to the next non-blank line \
-            and check if the end of the `current_line_span` was reached
+    def skip_blank_lines(self) -> None:
+        """Advance current line position past any consecutive blank lines.
 
-        Returns:
-            True if a non-blank line was found and `current_lineno` is still
-            within `current_line_span`, False if the end of the span was reached
-            without finding any non-blank lines.
+        Moves `current_lineno` forward until a non-blank line is found or the
+        end of document is reached.
+
+        Note:
+            This is a state-changing operation. After calling this method,
+            `current_lineno` will point to either:
+            - The next non-blank line (if any exists)
+            - `self.line_count` (if no non-blank lines remain)
         """
-
         self.current_lineno = self.next_non_blank_lineno(
             start_lineno=self.current_lineno
         )
-        return self.current_lineno < self.current_line_span.end_lineno
-
-    @property
-    def has_more_lines(self) -> bool:
-        """Return True if there are more lines to process within `current_line_span`."""
-        return self.current_lineno < self.current_line_span.end_lineno
 
     def is_line_outdented(self, lineno: int) -> bool:
         """Determine if a line is outdented relative to the current block.
