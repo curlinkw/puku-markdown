@@ -37,9 +37,7 @@ def safe_cast(typ: Type[T], val: Any) -> T:
 
     Raises:
         TypeError: If `val` is not an instance of `typ`, or if `typ` is not
-            a valid type for `isinstance` (e.g., a non-class, a `Union` from
-            `typing`, etc.). The error message includes the expected type and
-            the actual type of the value.
+            a valid type for `isinstance`.
     """
     if not isinstance(val, typ):
         raise TypeError(f"Expected type {typ}, got {type(val)}")
