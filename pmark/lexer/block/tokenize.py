@@ -3,6 +3,7 @@ from pmark.safe_cast import safe_cast
 from pmark.lexer.block.state import BlockLexerState
 from pmark.lexer.block.frame import BlockLexerFrame
 from pmark.lexer.block.command import BlockLexerCommandKind
+from pmark.lexer.block.frame_spec import BlockLexerFrameSpec
 from pmark.lexer.block.rule_chains import BlockLexerRuleChain
 
 
@@ -35,3 +36,6 @@ def block_tokenize(state: BlockLexerState, initial_rule_chain: BlockLexerRuleCha
 
                     case BlockLexerCommandKind.COMMIT_REJECTION:
                         continue
+
+                    case BlockLexerCommandKind.TOKENIZE_NESTED:
+                        framse_spec = safe_cast(BlockLexerFrameSpec, command.frame_spec)
