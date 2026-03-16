@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import IntEnum, auto
 
 from pmark.lexer.block.frame_spec import BlockLexerFrameSpec
+from pmark.lexer.block.rule_context import BlockLexerRuleContext
 
 
 class BlockLexerCommandKind(IntEnum):
@@ -57,10 +58,7 @@ class BlockLexerCommand:
     communication channel from lexer rules to the lexer engine.
 
     Design Note:
-        Currently, `BlockLexerCommand` is a single class with an optional
-        `frame_spec` field that serves multiple purposes. This design is
-        sufficient for the present set of command kinds. However, the
-        architecture anticipates the possibility of evolving into a
+        The architecture anticipates the possibility of evolving into a
         *discriminated union* (sum type) if future command variants require
         significantly different payloads. The current structure keeps the design
         simple until the need for more varied payloads arises.
@@ -71,8 +69,88 @@ class BlockLexerCommand:
     The specific action the lexer should perform. See `BlockLexerCommandKind` for details.
     """
 
-    frame_spec: BlockLexerFrameSpec | None = None
+    child_frame_spec: BlockLexerFrameSpec | None = None
     """
-    A frame specification used by certain command kinds
-    (`TOKENIZE_NESTED` and `PROBE_TERMINATION`). For other kinds, this field must be `None`.
+    Specification for creating a child frame, used by command kinds that initiate
+    nested lexical contexts (`TOKENIZE_NESTED` and `PROBE_TERMINATION`).
+    For command kinds that do not create a child frame, this field must be `None`.
     """
+
+    origin_rule_context: BlockLexerRuleContext | None = None
+    """
+    The context of the rule that produced this command.
+
+    When a rule returns a command to the lexer engine, its current execution
+    context must be captured and stored here. This allows the engine to later
+    resume the rule (e.g., after a nested frame completes) or use the context
+    when processing the command. For commands that do not originate from a rule
+    with a context (e.g., synthetic commands injected by the lexer itself),
+    this field must be `None`.
+    """
+
+    def expect_child_frame_spec(self) -> BlockLexerFrameSpec:
+        """
+        Return the child frame specification, asserting that it exists for this command kind.
+
+        This method is intended to be called only after confirming that the command
+        kind requires a child frame spec (i.e., `self.kind` is `TOKENIZE_NESTED` or
+        `PROBE_TERMINATION`). It provides a type-safe way to obtain the `not None`
+        `child_frame_spec` without further optional checks, performing a runtime
+        validation to uphold the invariant. If `child_frame_spec` is unexpectedly
+        `None` - indicating an internal logic error or inconsistent state - a
+        `ValueError` is raised.
+
+        Returns:
+            BlockLexerFrameSpec: The child frame specification associated with the command,
+            guaranteed to be `not None`.
+
+        Raises:
+            ValueError: If `self.child_frame_spec` is `None`, meaning the command kind does
+                not require a child frame spec or the dataclass invariant has been violated.
+        Example:
+        ```python
+            if cmd.kind in (BlockLexerCommandKind.TOKENIZE_NESTED,
+                            BlockLexerCommandKind.PROBE_TERMINATION):
+                spec = cmd.expect_child_frame_spec()
+        ```
+        """
+
+        if self.child_frame_spec is None:
+            raise ValueError(
+                f"Cannot get child frame spec: child_frame_spec is None for command kind {self.kind}, "
+                "but a child frame specification is expected for this kind."
+            )
+        return self.child_frame_spec
+
+    def expect_origin_rule_context(self) -> BlockLexerRuleContext:
+        """
+        Return the origin rule context, asserting that it exists for this command.
+
+        This method is intended to be called only after confirming that the command
+        originated from a rule that had a captured context (i.e., `origin_rule_context`
+        is not `None`). It provides a type-safe way to obtain the `not None` origin
+        context without further optional checks, performing a runtime validation to
+        uphold the invariant. If `origin_rule_context` is unexpectedly `None` -
+        indicating an internal logic error or inconsistent state - a `ValueError` is raised.
+
+        Returns:
+            BlockLexerRuleContext: The context of the rule that produced this command,
+            guaranteed to be `not None`.
+
+        Raises:
+            ValueError: If `self.origin_rule_context` is `None`, meaning the command
+                does not carry an origin rule context or the invariant has been violated.
+
+        Example:
+        ```python
+            if cmd.origin_rule_context is not None:
+                ctx = cmd.expect_origin_rule_context()
+                parent_frame.capture_current_rule_context(ctx)
+        ```
+        """
+        if self.origin_rule_context is None:
+            raise ValueError(
+                f"Cannot get origin rule context: origin_rule_context is None for command kind {self.kind}, "
+                "but an origin rule context is expected for this command."
+            )
+        return self.origin_rule_context

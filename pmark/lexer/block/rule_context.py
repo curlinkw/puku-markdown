@@ -10,7 +10,7 @@ class BlockLexerRuleContext:
     The line range being processed in this rule.
     """
 
-    speculative_mode: bool = field(default=False)
+    is_speculative_mode: bool = field(default=False)
     """
     When enabled, executes rule in speculative parsing mode - only checks if the rule matches
     at the current position without generating tokens.
