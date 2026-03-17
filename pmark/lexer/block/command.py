@@ -3,6 +3,7 @@ from enum import IntEnum, auto
 
 from pmark.lexer.block.frame_spec import BlockLexerFrameSpec
 from pmark.lexer.block.rule_context import BlockLexerRuleContext
+from pmark.lexer.block.upcall import BlockLexerUpcall, BlockLexerUpcallKind
 
 
 class BlockLexerCommandKind(IntEnum):
@@ -56,6 +57,13 @@ class BlockLexerCommand:
     A `BlockLexerCommand` encapsulates a directive that tells the block lexer
     how to proceed after a rule has finished its work. It is the primary
     communication channel from lexer rules to the lexer engine.
+
+    Commands play a central role in the *upcall pattern*: when a rule creates
+    a child frame (e.g., via `TOKENIZE_NESTED`), the command stores the rule's
+    context in `origin_rule_context`. When the child frame completes, it calls
+    `return_results()`, which in turn invokes `deliver_results()` on this command.
+    The command then forwards the result back to the originating rule's context,
+    allowing the rule to resume with the child's output.
 
     Design Note:
         The architecture anticipates the possibility of evolving into a
@@ -154,3 +162,35 @@ class BlockLexerCommand:
                 "but an origin rule context is expected for this command."
             )
         return self.origin_rule_context
+
+    def deliver_upcall(self, upcall: BlockLexerUpcall) -> None:
+        """
+        Deliver an upcall result to the context that originated this command.
+
+        In the upcall pattern, this method is invoked (typically by a completing
+        child frame) to pass the result of a nested operation back to the waiting
+        context (e.g., a suspended rule).
+
+        Args:
+            upcall: The upcall object representing the result of the nested
+                operation. Its structure is defined by `BlockLexerUpcall`.
+        """
+
+        match upcall.kind:
+            case BlockLexerUpcallKind.PROBE_TERMINATION_RESULT:
+                if self.kind is not BlockLexerCommandKind.PROBE_TERMINATION:
+                    raise ValueError(
+                        f"Cannot deliver PROBE_TERMINATION_RESULT to command of kind {self.kind}. "
+                        f"Expected PROBE_TERMINATION command."
+                    )
+                self.expect_origin_rule_context().has_termination_match = upcall.payload
+
+            case BlockLexerUpcallKind.TOKENIZE_NESTED_RESULT:
+                if self.kind is not BlockLexerCommandKind.TOKENIZE_NESTED:
+                    raise ValueError(
+                        f"Cannot deliver TOKENIZE_NESTED_RESULT to command of kind {self.kind}. "
+                        f"Expected TOKENIZE_NESTED command."
+                    )
+                self.expect_origin_rule_context().has_interblock_blank_line = (
+                    upcall.payload
+                )

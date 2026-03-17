@@ -7,6 +7,7 @@ from pmark.lexer.block.rule_chains import RULE_CHAINS, BlockLexerRuleChain
 from pmark.lexer.block.rule_context import BlockLexerRuleContext
 from pmark.lexer.block.command import BlockLexerCommand
 from pmark.lexer.block.type_aliases import BlockLexerRule
+from pmark.lexer.block.upcall import BlockLexerUpcall
 
 
 @dataclass(slots=True)
@@ -52,6 +53,21 @@ class BlockLexerFrame:
     This field captures the causal relationship in the explicit stack machine:
     when a parent frame processes a command that requires nested tokenization,
     that command is stored in the newly created child frame as its `causal_command`.
+    """
+
+    has_interblock_blank_line: bool = field(default=False)
+    """
+    Indicates whether the current frame contains at least one blank line that
+    separates two distinct block-level elements.
+
+    In the context of this lexer, a *block is the output of a successfully
+    invoked rule* from the frame's `rule_chain`. A rule signals successful completion
+    by emitting a `COMMIT_SUCCESS` command (see `BlockLexerCommandKind`). Thus, an
+    inter-block blank line occurs when a blank line appears *between* two such
+    `COMMIT_SUCCESS` events. Blank lines at the very start of the frame
+    (before the first `COMMIT_SUCCESS`) or at the very end (after the last `COMMIT_SUCCESS`)
+    are *excluded* from this flag. If needed, such leading or trailing blank lines
+    can be detected explicitly by rules.
     """
 
     @classmethod
@@ -217,3 +233,52 @@ class BlockLexerFrame:
                 "but the rule is expected to be suspended."
             )
         return self.current_rule_context
+
+    def expect_causal_command(self) -> BlockLexerCommand:
+        """
+        Return the `self.causal_command`, asserting that it exists.
+
+        This method is designed to be called only in contexts where the frame is
+        known to have been created by a command (e.g., during result return or
+        when accessing the caller's context). It provides a type-safe way to
+        obtain the `not None` command without further optional checks, by
+        performing a runtime validation.
+
+        Returns:
+            BlockLexerCommand: The command that caused this frame to be created,
+            guaranteed to be `not None`.
+
+        Raises:
+            ValueError: If `self.causal_command is None`, meaning the frame was
+            not created by a command or an invariant has been violated.
+        """
+        if self.causal_command is None:
+            raise ValueError(
+                "Cannot get causal_command: it is None, but the frame is expected "
+                "to have been created by a command."
+            )
+        return self.causal_command
+
+    def return_upcall(self, upcall: BlockLexerUpcall) -> None:
+        """
+        Complete this frame and deliver the upcall result to its creator.
+
+        This method is called exactly once when the frame has finished processing
+        and has produced an upcall object. It retrieves the causal command that
+        created this frame (via `expect_causal_command()`) and delegates delivery
+        of the upcall to that command's `deliver_upcall` method. After this call,
+        the frame is considered finished and should be popped from the lexer stack.
+
+        Args:
+            upcall: The upcall object containing the result of this frame's
+                execution. Its structure is defined by `BlockLexerUpcall` and
+                its kind must be compatible with the command that initiated
+                the frame (e.g., a `PROBE_TERMINATION` command expects a
+                `PROBE_TERMINATION_RESULT` upcall).
+
+        Raises:
+            RuntimeError: If the frame has no causal command (i.e., if
+                `expect_causal_command()` fails). This indicates a programming
+                error where a frame was created without a proper command link.
+        """
+        self.expect_causal_command().deliver_upcall(upcall=upcall)
