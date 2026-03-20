@@ -1,3 +1,4 @@
+from typing import Final
 from dataclasses import dataclass
 from enum import IntEnum, auto
 
@@ -47,6 +48,30 @@ class BlockLexerCommandKind(IntEnum):
     When this kind is used, the `frame_spec` field must contain a `BlockLexerFrameSpec`
     whose `rule_chain` defines the termination rules to probe.
     """
+
+
+APPLICABLE_COMMAND_KINDS: Final[frozenset[BlockLexerCommandKind]] = frozenset(
+    {
+        BlockLexerCommandKind.COMMIT_SUCCESS,
+        BlockLexerCommandKind.PROBE_TERMINATION,
+        BlockLexerCommandKind.TOKENIZE_NESTED,
+    }
+)
+"""
+Set of command kinds that terminate or suspend rule processing.
+These represent successful completion or forced termination of the current rule chain.
+"""
+
+NESTING_COMMAND_KINDS: Final[frozenset[BlockLexerCommandKind]] = frozenset(
+    {
+        BlockLexerCommandKind.PROBE_TERMINATION,
+        BlockLexerCommandKind.TOKENIZE_NESTED,
+    }
+)
+"""
+Set of command kinds that cause a new frame to be pushed onto the stack,
+creating a nested parsing context.
+"""
 
 
 @dataclass(slots=True, frozen=True)

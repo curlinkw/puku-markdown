@@ -185,7 +185,17 @@ class BlockLexerFrame:
             rule_context: An opaque object representing the suspended state of
                 the current rule. The caller should not modify or free it after
                 passing it to this method; ownership is transferred to the frame.
+
+        Raises:
+            ValueError: If a rule context is already captured (i.e.,
+                `current_rule_context` is not `None`). The caller must release
+                the existing context via `release_current_rule_context()` before
+                capturing a new one.
         """
+        if self.current_rule_context is not None:
+            raise ValueError(
+                "Cannot capture new rule context because another context is already captured."
+            )
         self.current_rule_context = rule_context
 
     def release_current_rule_context(self) -> None:
@@ -196,12 +206,21 @@ class BlockLexerFrame:
         return `False`. If the context held any resources, they should be considered
         released (in C, this would typically involve freeing the context object).
 
+        Raises:
+            ValueError: If no rule context is currently captured (i.e.,
+                `current_rule_context` is `None`). This prevents incorrect usage
+                such as double-releasing or releasing before any capture.
+
         Note:
             This method does not return the context; it simply discards it. If the
             caller needs to access the context before releasing, it should do so
             via a separate getter (e.g., accessing `current_rule_context` directly)
             before calling this method.
         """
+        if self.current_rule_context is None:
+            raise ValueError(
+                "Cannot release rule context: no context is currently captured."
+            )
         self.current_rule_context = None
 
     def expect_current_rule_context(self) -> BlockLexerRuleContext:

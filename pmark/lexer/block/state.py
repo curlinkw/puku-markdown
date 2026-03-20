@@ -22,7 +22,7 @@ class BlockLexerState:
     Current line number being processed.
     """
 
-    block_indent_space_count: int = field(default=0)
+    current_indent_space_count: int = field(default=0)
     """
     Current block's base indentation level measured in spaces.
 
@@ -159,6 +159,13 @@ class BlockLexerState:
             self.line_start_indices[lineno] + self.leading_whitespace_counts[lineno]
         ) >= self.line_end_indices[lineno]
 
+    @property
+    def is_preceded_by_blank_line(self) -> bool:
+        """
+        Return True if there is a previous line and it is blank.
+        """
+        return self.current_lineno > 0 and self.is_blank_line(self.current_lineno - 1)
+
     def next_non_blank_lineno(self, start_lineno: int) -> int:
         """Find the next line index (>= start_lineno) that is not blank.
 
@@ -208,4 +215,6 @@ class BlockLexerState:
             True if the line's indentation is strictly less than the current
             block's base indentation; otherwise False.
         """
-        return self.leading_indent_space_counts[lineno] < self.block_indent_space_count
+        return (
+            self.leading_indent_space_counts[lineno] < self.current_indent_space_count
+        )
