@@ -39,21 +39,25 @@ class BlockLexerCommandKind(IntEnum):
     field must contain a `BlockLexerFrameSpec` that defines the nested context.
     """
 
-    PROBE_TERMINATION = auto()
+    LOOKAHEAD_ANY_RULE_MATCHES = auto()
     """
-    Probe whether any termination rule matches at the current position.
+    Test whether any rule in the given set matches the upcoming input without
+    consuming characters.
 
-    Return this command when a rule needs to check if the current lexical context
-    should end. The lexer evaluates the given rule chain in *speculative mode*.
-    When this kind is used, the `frame_spec` field must contain a `BlockLexerFrameSpec`
-    whose `rule_chain` defines the termination rules to probe.
+    The lexer evaluates the provided rule chain in *speculative mode*.
+    If any rule reaches an accepting state, the lookahead returns
+    `True`; otherwise it returns `False`.
+
+    When this kind is used, the `frame_spec` field must contain a
+    `BlockLexerFrameSpec` whose `rule_chain` defines the set of rules to test
+    speculatively.
     """
 
 
 APPLICABLE_COMMAND_KINDS: Final[frozenset[BlockLexerCommandKind]] = frozenset(
     {
         BlockLexerCommandKind.COMMIT_SUCCESS,
-        BlockLexerCommandKind.PROBE_TERMINATION,
+        BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES,
         BlockLexerCommandKind.TOKENIZE_NESTED,
     }
 )
@@ -64,7 +68,7 @@ These represent successful completion or forced termination of the current rule 
 
 NESTING_COMMAND_KINDS: Final[frozenset[BlockLexerCommandKind]] = frozenset(
     {
-        BlockLexerCommandKind.PROBE_TERMINATION,
+        BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES,
         BlockLexerCommandKind.TOKENIZE_NESTED,
     }
 )
@@ -105,7 +109,7 @@ class BlockLexerCommand:
     child_frame_spec: BlockLexerFrameSpec | None = None
     """
     Specification for creating a child frame, used by command kinds that initiate
-    nested lexical contexts (`TOKENIZE_NESTED` and `PROBE_TERMINATION`).
+    nested lexical contexts (`TOKENIZE_NESTED` and `LOOKAHEAD_ANY_RULE_MATCHES`).
     For command kinds that do not create a child frame, this field must be `None`.
     """
 
@@ -127,7 +131,7 @@ class BlockLexerCommand:
 
         This method is intended to be called only after confirming that the command
         kind requires a child frame spec (i.e., `self.kind` is `TOKENIZE_NESTED` or
-        `PROBE_TERMINATION`). It provides a type-safe way to obtain the `not None`
+        `LOOKAHEAD_ANY_RULE_MATCHES`). It provides a type-safe way to obtain the `not None`
         `child_frame_spec` without further optional checks, performing a runtime
         validation to uphold the invariant. If `child_frame_spec` is unexpectedly
         `None` - indicating an internal logic error or inconsistent state - a
@@ -143,7 +147,7 @@ class BlockLexerCommand:
         Example:
         ```python
             if cmd.kind in (BlockLexerCommandKind.TOKENIZE_NESTED,
-                            BlockLexerCommandKind.PROBE_TERMINATION):
+                            BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES):
                 spec = cmd.expect_child_frame_spec()
         ```
         """
@@ -202,13 +206,13 @@ class BlockLexerCommand:
         """
 
         match upcall.kind:
-            case BlockLexerUpcallKind.PROBE_TERMINATION_RESULT:
-                if self.kind is not BlockLexerCommandKind.PROBE_TERMINATION:
+            case BlockLexerUpcallKind.LOOKAHEAD_ANY_RULE_MATCHED:
+                if self.kind is not BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES:
                     raise ValueError(
-                        f"Cannot deliver PROBE_TERMINATION_RESULT to command of kind {self.kind}. "
-                        f"Expected PROBE_TERMINATION command."
+                        f"Cannot deliver LOOKAHEAD_ANY_RULE_MATCHED to command of kind {self.kind}. "
+                        f"Expected LOOKAHEAD_ANY_RULE_MATCHES command."
                     )
-                self.expect_origin_rule_context().has_termination_match = upcall.payload
+                self.expect_origin_rule_context().lookahead_matched = upcall.payload
 
             case BlockLexerUpcallKind.TOKENIZE_NESTED_RESULT:
                 if self.kind is not BlockLexerCommandKind.TOKENIZE_NESTED:

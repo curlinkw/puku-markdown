@@ -16,18 +16,18 @@ class BlockLexerRuleContext:
     at the current position without generating tokens.
     """
 
-    has_termination_match: bool | None = field(default=None)
+    lookahead_matched: bool | None = field(default=None)
     """
-    Indicates whether a `BlockLexerCommand.PROBE_TERMINATION` call found a matching termination rule.
+    Stores whether the most recent `LOOKAHEAD_ANY_RULE_MATCHES` command succeeded.
 
-    This field holds the result of the most recent termination probe performed by
-    the rule. It is set to `True` if at least one termination rule successfully
-    matched, `False` if none matched, and remains `None` until a probe has been
-    initiated and completed. After the rule consumes this result (e.g., by resuming
+    When a rule issues a `LOOKAHEAD_ANY_RULE_MATCHES` command, the lexer evaluates the
+    specified rule chain in *speculative mode* without consuming input or emitting
+    tokens. If any rule in the chain reaches an accepting state, this field is set
+    to `True`; otherwise it is set to `False`. After the rule consumes this result (e.g., by resuming
     execution), the field should be reset to `None` to avoid stale state.
 
     The value is delivered to the rule context via an upcall of kind
-    `PROBE_TERMINATION_RESULT` and stored here until the rule is ready to act on it.
+    `LOOKAHEAD_ANY_RULE_MATCHED` and stored here until the rule is ready to act on it.
     """
 
     has_interblock_blank_line: bool | None = field(default=None)

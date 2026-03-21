@@ -116,7 +116,7 @@ class BlockLexerFrame:
         Create a child frame from a command that contains a frame specification.
 
         The command must be of a kind that includes a frame spec (e.g.,
-        `TOKENIZE_NESTED` or `PROBE_TERMINATION`). This method calls
+        `TOKENIZE_NESTED` or `LOOKAHEAD_ANY_RULE_MATCHES`). This method calls
         `command.expect_frame_spec()` to obtain the spec and uses it to build
         the new frame, also recording the command as the causal origin.
 
@@ -292,8 +292,8 @@ class BlockLexerFrame:
             upcall: The upcall object containing the result of this frame's
                 execution. Its structure is defined by `BlockLexerUpcall` and
                 its kind must be compatible with the command that initiated
-                the frame (e.g., a `PROBE_TERMINATION` command expects a
-                `PROBE_TERMINATION_RESULT` upcall).
+                the frame (e.g., a `LOOKAHEAD_ANY_RULE_MATCHES` command expects a
+                `LOOKAHEAD_ANY_RULE_MATCHED` upcall).
 
         Raises:
             RuntimeError: If the frame has no causal command (i.e., if

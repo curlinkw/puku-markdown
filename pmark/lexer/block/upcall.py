@@ -10,13 +10,13 @@ class BlockLexerUpcallKind(IntEnum):
     the type of outcome delivered back to the originating rule context.
     """
 
-    PROBE_TERMINATION_RESULT = auto()
+    LOOKAHEAD_ANY_RULE_MATCHED = auto()
     """
-    Result produced after the lexer processes a `PROBE_TERMINATION` command.
+    Result delivered after the lexer evaluates a `LOOKAHEAD_ANY_RULE_MATCHES` command.
 
-    Indicates whether any termination rule matched during the probe.
-    Payload: bool — `True` if at least one termination rule succeeded,
-    `False` otherwise.
+    Indicates whether the speculative lookahead succeeded — i.e., at least one rule
+    in the tested set matched the upcoming input without consuming characters.
+    Payload: `bool` — `True` if the at least one rule succeeded, `False` otherwise.
     """
 
     TOKENIZE_NESTED_RESULT = auto()
