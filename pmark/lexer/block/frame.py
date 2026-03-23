@@ -36,6 +36,15 @@ class BlockLexerFrame:
     Ordered sequence of lexer rules to apply for this frame.
     """
 
+    causal_command: BlockLexerCommand
+    """
+    The command that caused this lexical frame to be created.
+
+    This field captures the causal relationship in the explicit stack machine:
+    when a parent frame processes a command that requires nested tokenization,
+    that command is stored in the newly created child frame as its `causal_command`.
+    """
+
     current_rule_context: BlockLexerRuleContext | None = field(default=None)
     """
     *Mutable* context for the currently active rule.
@@ -44,15 +53,6 @@ class BlockLexerFrame:
     current_ruleno: int = field(default=0)
     """
     Index inside `rule_chain` of either the currently active rule or the next rule to process.
-    """
-
-    causal_command: BlockLexerCommand | None = field(default=None)
-    """
-    The command that caused this lexical frame to be created.
-
-    This field captures the causal relationship in the explicit stack machine:
-    when a parent frame processes a command that requires nested tokenization,
-    that command is stored in the newly created child frame as its `causal_command`.
     """
 
     has_interblock_blank_line: bool = field(default=False)
@@ -74,8 +74,8 @@ class BlockLexerFrame:
     def from_spec(
         cls: type[Self],
         spec: BlockLexerFrameSpec,
+        causal_command: BlockLexerCommand,
         current_ruleno: int = 0,
-        causal_command: BlockLexerCommand | None = None,
     ) -> Self:
         """
         Create a `BlockLexerFrame` from a `BlockLexerFrameSpec` object.

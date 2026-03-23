@@ -6,6 +6,7 @@ from pmark.lexer.block.command import (
     BlockLexerCommandKind,
     APPLICABLE_COMMAND_KINDS,
     NESTING_COMMAND_KINDS,
+    SPECULATIVE_SAFE_COMMAND_KINDS,
 )
 from pmark.lexer.block.rule_chains import BlockLexerRuleChain
 from pmark.lexer.block.rule_context import BlockLexerRuleContext
@@ -20,10 +21,10 @@ def _process_command(
     """Apply a command to the frame stack and current frame."""
 
     match command.kind:
-        case (
-            BlockLexerCommandKind.COMMIT_SUCCESS
-            | BlockLexerCommandKind.COMMIT_REJECTION
-        ):
+        case BlockLexerCommandKind.COMMIT_SUCCESS:
+            current_frame.reset_ruleno()
+
+        case BlockLexerCommandKind.COMMIT_REJECTION:
             current_frame.increment_ruleno()
 
         case (
@@ -41,17 +42,17 @@ def _process_rules_through_next_applicable(
     frames: list[BlockLexerFrame],
     state: BlockLexerState,
     current_frame: BlockLexerFrame,
-) -> BlockLexerCommand:
+    is_speculative_mode: bool,
+) -> BlockLexerCommand | None:
     """Process rules of the current frame sequentially until an applicable command appears.
 
     The name uses `through` to indicate inclusive processing: the rule that yields the
     applicable command is processed and its command is returned.
 
-    If the loop exhausts all rules without producing an applicable command,
-    an exception is raised.
+    If no rule in the current frame produces an applicable command, `None` is returned.
 
-    Raises:
-        LookupError: If the loop completes without producing an applicable command.
+    Returns:
+    The command produced by the first applicable rule, or `None` if no rule applies.
     """
     while current_frame.has_more_rules:
         command = current_frame.current_rule(
@@ -61,15 +62,20 @@ def _process_rules_through_next_applicable(
                     start_lineno=state.current_lineno,
                     end_lineno=current_frame.line_span.end_lineno,
                 ),
-                is_speculative_mode=False,
+                is_speculative_mode=is_speculative_mode,
             ),
         )
+        if is_speculative_mode and (command.kind not in SPECULATIVE_SAFE_COMMAND_KINDS):
+            raise RuntimeError(
+                f"Speculative mode only permits safe commands: {SPECULATIVE_SAFE_COMMAND_KINDS}. Got {command.kind}."
+            )
+
         _process_command(frames=frames, current_frame=current_frame, command=command)
 
         if command.kind in APPLICABLE_COMMAND_KINDS:
             return command
 
-    raise LookupError("No applicable command produced by frame.")
+    return None
 
 
 def _is_in_block_scope(state: BlockLexerState, frame: BlockLexerFrame) -> bool:
@@ -115,9 +121,17 @@ def _lex_through_next_applicable_rule(
     if not is_first_call_in_frame:
         current_frame.has_interblock_blank_line |= state.is_preceded_by_blank_line
 
-    return _process_rules_through_next_applicable(
-        frames=frames, state=state, current_frame=current_frame
+    command = _process_rules_through_next_applicable(
+        frames=frames,
+        state=state,
+        current_frame=current_frame,
+        is_speculative_mode=False,
     )
+
+    if command is None:
+        raise LookupError("No applicable command produced by frame.")
+
+    return command
 
 
 def _lex_frame(
@@ -184,8 +198,31 @@ def _lookahead_any_rule_matches(
     frames: list[BlockLexerFrame],
     state: BlockLexerState,
     current_frame: BlockLexerFrame,
-):
-    pass
+) -> BlockLexerUpcall | None:
+    """Check if any rule in the current frame's rule chain matches in speculative mode.
+
+    Returns:
+        `None` if a nesting command was processed, otherwise a `BlockLexerUpcall`
+        that signals the frame is complete.
+    """
+    command = _process_rules_through_next_applicable(
+        frames=frames,
+        state=state,
+        current_frame=current_frame,
+        is_speculative_mode=True,
+    )
+
+    if command is None:
+        return BlockLexerUpcall(
+            kind=BlockLexerUpcallKind.LOOKAHEAD_ANY_RULE_MATCHED, payload=False
+        )
+
+    if command.kind is BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES:
+        return None
+
+    return BlockLexerUpcall(
+        kind=BlockLexerUpcallKind.LOOKAHEAD_ANY_RULE_MATCHED, payload=True
+    )
 
 
 def block_tokenize(state: BlockLexerState, initial_rule_chain: BlockLexerRuleChain):
@@ -193,8 +230,32 @@ def block_tokenize(state: BlockLexerState, initial_rule_chain: BlockLexerRuleCha
         BlockLexerFrame(
             line_span=LineSpan(start_lineno=0, end_lineno=state.line_count),
             rule_chain=initial_rule_chain,
+            causal_command=BlockLexerCommand(
+                kind=BlockLexerCommandKind.INITIALIZE_ROOT_FRAME
+            ),
         )
     ]
 
     while frames:
-        current_frame = frames.pop()
+        current_frame = frames[-1]
+
+        match current_frame.causal_command.kind:
+            case (
+                BlockLexerCommandKind.TOKENIZE_NESTED
+                | BlockLexerCommandKind.INITIALIZE_ROOT_FRAME
+            ):
+                upcall = _lex_frame(
+                    frames=frames, state=state, current_frame=current_frame
+                )
+            case BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES:
+                upcall = _lookahead_any_rule_matches(
+                    frames=frames, state=state, current_frame=current_frame
+                )
+            case _:
+                raise ValueError(
+                    f"Invalid causal_command kind: {current_frame.causal_command.kind}."
+                )
+
+        if upcall is not None:
+            current_frame.return_upcall(upcall=upcall)
+            frames.pop()
