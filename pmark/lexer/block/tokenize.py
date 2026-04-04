@@ -8,7 +8,7 @@ from pmark.lexer.block.command import (
     NESTING_COMMAND_KINDS,
     SPECULATIVE_SAFE_COMMAND_KINDS,
 )
-from pmark.lexer.block.rule_chains import BlockLexerRuleChain
+from pmark.lexer.block.rule_chain import BlockLexerRuleChain
 from pmark.lexer.block.rule_context import BlockLexerRuleContext
 from pmark.lexer.block.upcall import BlockLexerUpcall, BlockLexerUpcallKind
 

@@ -7,6 +7,6 @@ if TYPE_CHECKING:
     from pmark.lexer.block.command import BlockLexerCommand
 
 
-BlockLexerRule: TypeAlias = Callable[
+BlockLexerRuleFunc: TypeAlias = Callable[
     [BlockLexerState, BlockLexerRuleContext], BlockLexerCommand
 ]

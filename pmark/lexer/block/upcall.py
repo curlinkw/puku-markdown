@@ -1,8 +1,8 @@
-from enum import IntEnum, auto
+from enum import Enum, auto
 from dataclasses import dataclass
 
 
-class BlockLexerUpcallKind(IntEnum):
+class BlockLexerUpcallKind(Enum):
     """
     Discriminant for the result data produced by the lexer when processing a command.
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from pmark.line_span import LineSpan
-from pmark.lexer.block.rule_chains import BlockLexerRuleChain
+from pmark.lexer.block.rule_chain import BlockLexerRuleChain
 from pmark.lexer.block.rule_context import BlockLexerRuleContext
 
 

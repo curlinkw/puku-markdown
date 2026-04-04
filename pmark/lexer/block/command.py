@@ -1,13 +1,13 @@
 from typing import Final
 from dataclasses import dataclass
-from enum import IntEnum, auto
+from enum import Enum, auto
 
 from pmark.lexer.block.frame_spec import BlockLexerFrameSpec
 from pmark.lexer.block.rule_context import BlockLexerRuleContext
 from pmark.lexer.block.upcall import BlockLexerUpcall, BlockLexerUpcallKind
 
 
-class BlockLexerCommandKind(IntEnum):
+class BlockLexerCommandKind(Enum):
     """
     Discriminant for lexer commands that control the explicit stack machine's
     flow and state transitions.

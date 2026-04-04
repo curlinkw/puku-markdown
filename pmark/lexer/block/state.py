@@ -22,55 +22,66 @@ class BlockLexerState:
     Current line number being processed.
     """
 
-    current_indent_space_count: int = field(default=0)
+    current_block_indent_width: int = field(default=0)
     """
-    Current block's base indentation level measured in spaces.
-
-    This value represents the minimum indentation required for content to be
-    considered part of the current block container (blockquote, list item, etc.).
-    Lines with indentation less than this value terminate the block.
+    Visual column width (tabs expanded to spaces) that represents the indentation
+    level of the current block. Lines with indentation less than this value are
+    considered outdented and terminate the block.
     """
 
-    # Pre-computed line boundaries.
-
-    line_start_indices: list[int] = field(default_factory=list, init=False)  # bMark
+    line_starts_charno: list[int] = field(default_factory=list, init=False)  # bMark
     """
     For each line, the index in `source` where the line begins.
     A fake entry is added at the end for safe bounds checks.
     """
 
-    line_end_indices: list[int] = field(default_factory=list, init=False)  # eMark
+    line_ends_charno: list[int] = field(default_factory=list, init=False)  # eMark
     """
     For each line, the index in `source` just after the line's content
     (i.e. the position of the newline character or the end of the string).
     A fake entry is added at the end for safe bounds checks.
     """
 
-    leading_whitespace_counts: list[int] = field(
+    current_positions_charno: list[int] = field(
         default_factory=list, init=False
     )  # tShift
     """
-    Number of leading whitespace characters (spaces and tabs) before the
-    first non-space character on each line. Tabs count as **one** whitespace
-    character (raw count, not expanded).
+    For each line, character offset from the start of the line to the current
+    parsing position. Points to the character that is about to be
+    processed. After indentation and block markers have been consumed, this
+    points to the first non-indent, non-marker character (i.e., the actual
+    content).
     """
 
-    leading_indent_space_counts: list[int] = field(
-        default_factory=list, init=False
-    )  # sCount
+    current_indents_width: list[int] = field(default_factory=list, init=False)  # sCount
     """
-    The indentation level of each line expressed in **spaces**, with tabs
-    expanded to the next multiple of 4. This is the effective visual indent.
+    For each line, *visual* column width (tabs expanded to spaces) of the indentation that appears
+    *before* the actual content on the current line, *after* any block marker has
+    been consumed.
+
+    - For blocks with a marker (blockquotes, lists), this is the number of spaces
+    between the marker and the first non-space content character (i.e., the indent
+    after the marker). The marker itself is *excluded* from this width.
+    - For blocks without a marker (paragraphs, code blocks), this is simply the
+    visual indent.
     """
 
-    base_indent_space_counts: list[int] = field(
+    current_initial_indents_width: list[int] = field(
         default_factory=list, init=False
     )  # bsCount
     """
-    Virtual indentation (in spaces) used to adjust tab expansion when the
-    beginning of a line has been logically moved (e.g. by blockquote markers).
-    Initially zero for every line; mutated during parsing to preserve
-    correct tab expansion when `line_start_indices` is overridden.
+    For each line, total visual column width (tabs expanded to spaces) of the marker region for
+    the current block. This includes:
+
+    - Any initial indent before the marker,
+    - The marker character itself (e.g., `>` for blockquotes),
+    - An optional single space after the marker (e.g., for blockquotes).
+
+    That is, for:
+    - *Blocks with a marker* (e.g., blockquotes, lists): this value is the combined width
+    of the initial indent, marker, and (e.g., for blockquotes) an optional following space.
+    - *Blocks without a marker* (e.g., paragraphs, code blocks, etc.): this field is `0`
+    and should be ignored.
     """
 
     line_count: int = field(init=False)  # lineMax
@@ -86,22 +97,25 @@ class BlockLexerState:
         source_length = len(self.source)
 
         in_leading_whitespaces = True
-        line_start_index = 0
-        leading_whitespace_count = 0
-        leading_indent_space_count = 0
+        current_line_start_charno = 0
+
+        # length: character count (raw spaces/tabs as characters, not expanded)
+        # width: visual column width (tabs expanded to spaces)
+        current_indent_length = 0
+        current_indent_width = 0
 
         for position, character in enumerate(self.source):
             if in_leading_whitespaces:
                 if is_space_or_tab(character):
-                    leading_whitespace_count += 1
+                    current_indent_length += 1
 
                     # For indentation purposes, tabs behave as if replaced by spaces
                     # with tab stops every 4 characters.
                     # https://spec.commonmark.org/0.31.2/#tabs
-                    leading_indent_space_count += (
+                    current_indent_width += (
                         (
                             COMMONMARK_TAB_STOP
-                            - leading_indent_space_count % COMMONMARK_TAB_STOP
+                            - current_indent_width % COMMONMARK_TAB_STOP
                         )
                         if character == "\t"
                         else 1
@@ -115,27 +129,27 @@ class BlockLexerState:
             if (
                 is_last_character := (position + 1 >= source_length)
             ) or character == "\n":
-                self.line_start_indices.append(line_start_index)
-                self.line_end_indices.append(
+                self.line_starts_charno.append(current_line_start_charno)
+                self.line_ends_charno.append(
                     source_length if is_last_character else position
                 )
-                self.leading_whitespace_counts.append(leading_whitespace_count)
-                self.leading_indent_space_counts.append(leading_indent_space_count)
-                self.base_indent_space_counts.append(0)
+                self.current_positions_charno.append(current_indent_length)
+                self.current_indents_width.append(current_indent_width)
+                self.current_initial_indents_width.append(0)
 
                 in_leading_whitespaces = True
-                line_start_index = position + 1
-                leading_whitespace_count = 0
-                leading_indent_space_count = 0
+                current_line_start_charno = position + 1
+                current_indent_length = 0
+                current_indent_width = 0
 
-        self.line_start_indices.append(source_length)
-        self.line_end_indices.append(source_length)
-        self.leading_whitespace_counts.append(0)
-        self.leading_indent_space_counts.append(0)
-        self.base_indent_space_counts.append(0)
+        self.line_starts_charno.append(source_length)
+        self.line_ends_charno.append(source_length)
+        self.current_positions_charno.append(0)
+        self.current_indents_width.append(0)
+        self.current_initial_indents_width.append(0)
 
         # exclude the final fake entry
-        self.line_count = len(self.line_start_indices) - 1
+        self.line_count = len(self.line_starts_charno) - 1
 
     def __post_init__(self):
         """Just compute line boundaries."""
@@ -156,8 +170,8 @@ class BlockLexerState:
             contains any non-whitespace characters.
         """
         return (
-            self.line_start_indices[lineno] + self.leading_whitespace_counts[lineno]
-        ) >= self.line_end_indices[lineno]
+            self.line_starts_charno[lineno] + self.current_positions_charno[lineno]
+        ) >= self.line_ends_charno[lineno]
 
     @property
     def is_preceded_by_blank_line(self) -> bool:
@@ -215,6 +229,4 @@ class BlockLexerState:
             True if the line's indentation is strictly less than the current
             block's base indentation; otherwise False.
         """
-        return (
-            self.leading_indent_space_counts[lineno] < self.current_indent_space_count
-        )
+        return self.current_indents_width[lineno] < self.current_block_indent_width

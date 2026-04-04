@@ -3,10 +3,11 @@ from dataclasses import dataclass, field
 
 from pmark.line_span import LineSpan
 from pmark.lexer.block.frame_spec import BlockLexerFrameSpec
-from pmark.lexer.block.rule_chains import RULE_CHAINS, BlockLexerRuleChain
+from pmark.lexer.block.rule_chain import BlockLexerRuleChain
+from pmark.lexer.block.rule_chains_registry import BLOCK_LEXER_RULE_CHAINS
 from pmark.lexer.block.rule_context import BlockLexerRuleContext
 from pmark.lexer.block.command import BlockLexerCommand
-from pmark.lexer.block.type_aliases import BlockLexerRule
+from pmark.lexer.block.type_aliases import BlockLexerRuleFunc
 from pmark.lexer.block.upcall import BlockLexerUpcall
 
 
@@ -132,13 +133,13 @@ class BlockLexerFrame:
         )
 
     @property
-    def current_rule(self) -> BlockLexerRule:
+    def current_rule(self) -> BlockLexerRuleFunc:
         """Return the rule at the `current_ruleno`.
 
         Returns:
-            BlockLexerRule: The rule at the current position.
+            BlockLexerRuleFunc: The rule at the current position.
         """
-        return RULE_CHAINS[self.rule_chain][self.current_ruleno]
+        return BLOCK_LEXER_RULE_CHAINS[self.rule_chain][self.current_ruleno]
 
     @property
     def has_more_rules(self) -> bool:
@@ -149,7 +150,7 @@ class BlockLexerFrame:
                 rule list (i.e., there is at least one rule remaining),
                 otherwise `False`.
         """
-        return self.current_ruleno < len(RULE_CHAINS[self.rule_chain])
+        return self.current_ruleno < len(BLOCK_LEXER_RULE_CHAINS[self.rule_chain])
 
     def reset_ruleno(self) -> None:
         """Reset the `current_ruleno` to the beginning."""

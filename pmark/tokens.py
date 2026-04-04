@@ -1,8 +1,8 @@
-from enum import IntEnum, auto
+from enum import Enum, auto
 from dataclasses import dataclass
 
 
-class TokenKind(IntEnum):
+class TokenKind(Enum):
     """
     Token kind identifiers for the Markdown parser's token stream.
     This enum defines *every* token type the lexer can emit.
