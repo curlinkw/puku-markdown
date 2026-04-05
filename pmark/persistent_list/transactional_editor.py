@@ -1,4 +1,4 @@
-from typing import Generic, overload, Union, Self
+from typing import Generic, overload, Union
 
 from pmark.persistent_list.core import PersistentList
 from pmark.persistent_list.change_set import ChangeSet
@@ -7,9 +7,33 @@ from pmark.persistent_list.type_vars import ItemT
 
 
 class TransactionalEditor(Generic[ItemT]):
+    """
+    Editor that records modifications within an atomic, rollback-able transaction.
+
+    Writes are applied immediately to the
+    persistent list and recorded for potential rollback.
+
+    The transaction must be explicitly started with `enter_transaction()` and
+    ended with `exit_transaction()`. On exit, *all recorded modifications are
+    rolled back*.
+
+    *Write access is only allowed when this editor's transaction is the top of
+    the changeset stack* - i.e., no other transaction has been started after it.
+    In a nested (stacked) scenario, only the innermost (most recent) transaction
+    can perform writes; attempts to write via a parent transaction raise an error.
+
+    Only one transaction can be active per persistent list at a time, and no active
+    `Transient` may exist while a transaction is open.
+    """
+
+    __slots__ = ("_target", "_changeset")
+
     def __init__(self, target: PersistentList[ItemT]) -> None:
         self._target: PersistentList[ItemT] = target
+        """The persistent list this editor modifies"""
+
         self._changeset: ChangeSet | None = None
+        """`ChangeSet` of active transaction, or `None` if none active"""
 
     @overload
     def __getitem__(self, index: int) -> ItemT: ...
@@ -33,8 +57,25 @@ class TransactionalEditor(Generic[ItemT]):
 
     def enter_transaction(self) -> None:
         """
-        Enter the transactional context, creating and activating a new transaction.
+        Enter a transactional context, creating and activating a new transaction.
+
+        A transaction cannot be started while an active `Transient` exists on
+        the same persistent list, because the transient allows unversioned mutations
+        that would conflict with transactional guarantees.
+
+        Raises:
+            RuntimeError: If the persistent list currently has an active transient.
+            ValueError: If a transaction is already active
         """
+        if self._target.has_transient:
+            raise RuntimeError(
+                "Cannot start a transaction while an active Transient exists. "
+            )
+        if self.is_transaction_active:
+            raise RuntimeError(
+                "Cannot start a transaction: a transaction is already active. Exit the current transaction first."
+            )
+
         modification_count = len(self._target._changeset_stack)
         self._changeset = ChangeSet(
             start_modification_index=modification_count,
