@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 
 from pmark.tokens import Token
+from pmark.lexer.block.line_descriptor import LineDescriptor
+from pmark.persistent_list import PersistentList, Transient
 from pmark.pattern_predicates import is_space_or_tab
 from pmark.constants import COMMONMARK_TAB_STOP
 
@@ -14,7 +16,7 @@ class BlockLexerState:
 
     tokens: list[Token] = field(default_factory=list)
     """
-    The list of tokens produced so far.
+    The list of tokens produced so f    ar.
     """
 
     current_lineno: int = field(default=0)
@@ -29,59 +31,12 @@ class BlockLexerState:
     considered outdented and terminate the block.
     """
 
-    line_starts_charno: list[int] = field(default_factory=list, init=False)  # bMark
+    line_descriptors: PersistentList[LineDescriptor] = field(
+        init=False, default_factory=PersistentList
+    )
     """
-    For each line, the index in `source` where the line begins.
-    A fake entry is added at the end for safe bounds checks.
-    """
-
-    line_ends_charno: list[int] = field(default_factory=list, init=False)  # eMark
-    """
-    For each line, the index in `source` just after the line's content
-    (i.e. the position of the newline character or the end of the string).
-    A fake entry is added at the end for safe bounds checks.
-    """
-
-    current_positions_charno: list[int] = field(
-        default_factory=list, init=False
-    )  # tShift
-    """
-    For each line, character offset from the start of the line to the current
-    parsing position. Points to the character that is about to be
-    processed. After indentation and block markers have been consumed, this
-    points to the first non-indent, non-marker character (i.e., the actual
-    content).
-    """
-
-    current_indents_width: list[int] = field(default_factory=list, init=False)  # sCount
-    """
-    For each line, *visual* column width (tabs expanded to spaces) of the indentation that appears
-    *before* the actual content on the current line, *after* any block marker has
-    been consumed.
-
-    - For blocks with a marker (blockquotes, lists), this is the number of spaces
-    between the marker and the first non-space content character (i.e., the indent
-    after the marker). The marker itself is *excluded* from this width.
-    - For blocks without a marker (paragraphs, code blocks), this is simply the
-    visual indent.
-    """
-
-    current_initial_indents_width: list[int] = field(
-        default_factory=list, init=False
-    )  # bsCount
-    """
-    For each line, total visual column width (tabs expanded to spaces) of the marker region for
-    the current block. This includes:
-
-    - Any initial indent before the marker,
-    - The marker character itself (e.g., `>` for blockquotes),
-    - An optional single space after the marker (e.g., for blockquotes).
-
-    That is, for:
-    - *Blocks with a marker* (e.g., blockquotes, lists): this value is the combined width
-    of the initial indent, marker, and (e.g., for blockquotes) an optional following space.
-    - *Blocks without a marker* (e.g., paragraphs, code blocks, etc.): this field is `0`
-    and should be ignored.
+    `LineDescriptor`'s for the source, computed relative to the current block.
+    Indexed by line number (0-based).
     """
 
     line_count: int = field(init=False)  # lineMax
@@ -89,9 +44,9 @@ class BlockLexerState:
     Total number of real lines in the source (excluding the final fake entry).
     """
 
-    def _compute_line_boundaries(self) -> None:
+    def _compute_line_descriptors(self) -> None:
         """
-        Compute line boundaries.
+        Compute line descriptors.
         """
 
         source_length = len(self.source)
@@ -104,56 +59,68 @@ class BlockLexerState:
         current_indent_length = 0
         current_indent_width = 0
 
-        for position, character in enumerate(self.source):
-            if in_leading_whitespaces:
-                if is_space_or_tab(character):
-                    current_indent_length += 1
+        with Transient(self.line_descriptors) as line_desciptors_editor:
+            for position, character in enumerate(self.source):
+                if in_leading_whitespaces:
+                    if is_space_or_tab(character):
+                        current_indent_length += 1
 
-                    # For indentation purposes, tabs behave as if replaced by spaces
-                    # with tab stops every 4 characters.
-                    # https://spec.commonmark.org/0.31.2/#tabs
-                    current_indent_width += (
-                        (
-                            COMMONMARK_TAB_STOP
-                            - current_indent_width % COMMONMARK_TAB_STOP
+                        # For indentation purposes, tabs behave as if replaced by spaces
+                        # with tab stops every 4 characters.
+                        # https://spec.commonmark.org/0.31.2/#tabs
+                        current_indent_width += (
+                            (
+                                COMMONMARK_TAB_STOP
+                                - current_indent_width % COMMONMARK_TAB_STOP
+                            )
+                            if character == "\t"
+                            else 1
                         )
-                        if character == "\t"
-                        else 1
+
+                        continue
+                    else:
+                        in_leading_whitespaces = False
+
+                #
+                if (
+                    is_last_character := (position + 1 >= source_length)
+                ) or character == "\n":
+                    line_desciptors_editor.append(
+                        LineDescriptor(
+                            line_start_charno=current_line_start_charno,
+                            current_marker_indent_width=0,
+                            current_after_marker_charno=current_line_start_charno,
+                            current_content_indent_width=current_indent_width,
+                            current_content_start_charno=current_line_start_charno
+                            + current_indent_length,
+                            line_end_charno=(
+                                source_length if is_last_character else position
+                            ),
+                        )
                     )
 
-                    continue
-                else:
-                    in_leading_whitespaces = False
+                    in_leading_whitespaces = True
+                    current_line_start_charno = position + 1
+                    current_indent_length = 0
+                    current_indent_width = 0
 
-            #
-            if (
-                is_last_character := (position + 1 >= source_length)
-            ) or character == "\n":
-                self.line_starts_charno.append(current_line_start_charno)
-                self.line_ends_charno.append(
-                    source_length if is_last_character else position
+            line_desciptors_editor.append(
+                LineDescriptor(
+                    line_start_charno=source_length,
+                    current_marker_indent_width=0,
+                    current_after_marker_charno=source_length,
+                    current_content_indent_width=0,
+                    current_content_start_charno=source_length,
+                    line_end_charno=source_length,
                 )
-                self.current_positions_charno.append(current_indent_length)
-                self.current_indents_width.append(current_indent_width)
-                self.current_initial_indents_width.append(0)
-
-                in_leading_whitespaces = True
-                current_line_start_charno = position + 1
-                current_indent_length = 0
-                current_indent_width = 0
-
-        self.line_starts_charno.append(source_length)
-        self.line_ends_charno.append(source_length)
-        self.current_positions_charno.append(0)
-        self.current_indents_width.append(0)
-        self.current_initial_indents_width.append(0)
+            )
 
         # exclude the final fake entry
-        self.line_count = len(self.line_starts_charno) - 1
+        self.line_count = len(self.line_descriptors) - 1
 
     def __post_init__(self):
         """Just compute line boundaries."""
-        self._compute_line_boundaries()
+        self._compute_line_descriptors()
 
     def is_blank_line(self, lineno: int) -> bool:
         """Determine if a line contains only whitespace or is completely empty.
@@ -170,8 +137,9 @@ class BlockLexerState:
             contains any non-whitespace characters.
         """
         return (
-            self.line_starts_charno[lineno] + self.current_positions_charno[lineno]
-        ) >= self.line_ends_charno[lineno]
+            self.line_descriptors[lineno].current_content_start_charno
+            >= self.line_descriptors[lineno].line_end_charno
+        )
 
     @property
     def is_preceded_by_blank_line(self) -> bool:
@@ -229,4 +197,7 @@ class BlockLexerState:
             True if the line's indentation is strictly less than the current
             block's base indentation; otherwise False.
         """
-        return self.current_indents_width[lineno] < self.current_block_indent_width
+        return (
+            self.line_descriptors[lineno].current_content_indent_width
+            < self.current_block_indent_width
+        )

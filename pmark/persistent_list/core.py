@@ -41,6 +41,10 @@ class PersistentList(Generic[ItemT]):
         self._has_transient: bool = False
         """`True` when a `Transient` is currently active."""
 
+    def __len__(self) -> int:
+        """Return the number of items in a container."""
+        return len(self._items)
+
     @property
     def has_transient(self) -> bool:
         """`True` if an active `Transient` currently exists for this persistent list."""
