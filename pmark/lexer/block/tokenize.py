@@ -31,9 +31,13 @@ def _process_command(
             BlockLexerCommandKind.TOKENIZE_NESTED
             | BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES
         ):
-            current_frame.capture_current_rule_context(
-                rule_context=command.expect_origin_rule_context()
-            )
+            if not current_frame.is_current_rule_suspended:
+                # Invariant:
+                # No suspended context
+                # -> first rule invokation
+                current_frame.capture_current_rule_context(
+                    rule_context=command.expect_origin_rule_context()
+                )
             child_frame = current_frame.create_child_from_command(command=command)
             frames.append(child_frame)
 
@@ -150,11 +154,13 @@ def _lex_frame(
         command = current_frame.current_rule(
             state, current_frame.expect_current_rule_context()
         )
-        current_frame.release_current_rule_context()
         _process_command(frames=frames, current_frame=current_frame, command=command)
 
-        if current_frame.is_current_rule_suspended:
+        if command.kind in NESTING_COMMAND_KINDS:
             return None
+        else:
+            current_frame.release_current_rule_context()
+
     else:
         # Invariant: If the frame is not suspended, there is no active rule
         # context, so this must be the very first time we enter the frame.
