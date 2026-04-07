@@ -109,14 +109,14 @@ def _lex_through_next_applicable_rule(
 
     state.skip_blank_lines()
 
+    if state.current_lineno not in current_frame.line_span:
+        return None
+
     if state.line_descriptors[state.current_lineno].is_lazy_continuation:
         raise RuntimeError(
             f"Internal parser error: lazy continuation line {state.current_lineno} "
             "was not consumed by the previous block rule."
         )
-
-    if state.current_lineno not in current_frame.line_span:
-        return None
 
     if state.is_line_outdented(state.current_lineno):
         return None
