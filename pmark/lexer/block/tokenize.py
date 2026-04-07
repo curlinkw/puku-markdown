@@ -82,16 +82,6 @@ def _process_rules_through_next_applicable(
     return None
 
 
-def _is_in_block_scope(state: BlockLexerState, frame: BlockLexerFrame) -> bool:
-    """
-    Return True if the current line (from state) lies within the frame's
-    line span and is not outdented (i.e., the block's indentation has not ended).
-    """
-    return state.current_lineno in frame.line_span and not state.is_line_outdented(
-        state.current_lineno
-    )
-
-
 def _lex_through_next_applicable_rule(
     frames: list[BlockLexerFrame],
     state: BlockLexerState,
@@ -119,7 +109,16 @@ def _lex_through_next_applicable_rule(
 
     state.skip_blank_lines()
 
-    if not _is_in_block_scope(state=state, frame=current_frame):
+    if state.line_descriptors[state.current_lineno].is_lazy_continuation:
+        raise RuntimeError(
+            f"Internal parser error: lazy continuation line {state.current_lineno} "
+            "was not consumed by the previous block rule."
+        )
+
+    if state.current_lineno not in current_frame.line_span:
+        return None
+
+    if state.is_line_outdented(state.current_lineno):
         return None
 
     if not is_first_call_in_frame:

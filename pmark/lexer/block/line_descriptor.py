@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(slots=True, frozen=True)
@@ -21,7 +21,7 @@ class LineDescriptor:
     Visual column widths assume tab stops every 4 spaces (CommonMark convention).
     """
 
-    line_start_charno: int
+    line_start_charno: int  # Inirial bMark
     """
     Character index of the first character of the line (inclusive).
     """
@@ -48,7 +48,22 @@ class LineDescriptor:
     Character index of the first character of the actual content (after content indent).
     """
 
-    line_end_charno: int
+    line_end_charno: int  # eMark
     """
     Character index immediately after the last character of the line (exclusive).
+    """
+
+    is_lazy_continuation: bool = field(default=False)  # sCount = -1
+    """
+    Indicates that this line is a *lazy continuation* of the previous block's content.
+
+    In CommonMark, certain block constructs (e.g., blockquotes, lists) allow subsequent lines
+    to continue the same block without repeating the leading marker (e.g., `>`).
+    Such lines are called lazy continuation lines.
+
+    When `True`, this line should be parsed as if it were part of the preceding block's
+    content, disregarding its own indentation and marker presence.
+
+    This flag is set by block rules (e.g., blockquote, list) when they detect a line that
+    belongs to the current block but lacks the expected marker.
     """

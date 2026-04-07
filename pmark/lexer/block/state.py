@@ -3,8 +3,9 @@ from dataclasses import dataclass, field
 from pmark.tokens import Token
 from pmark.lexer.block.line_descriptor import LineDescriptor
 from pmark.persistent_list import PersistentList, Transient
+from pmark.lexer.block.column_resolution import ColumnResolution
+from pmark.pattern_metrics import char_width
 from pmark.pattern_predicates import is_space_or_tab
-from pmark.constants import COMMONMARK_TAB_STOP
 
 
 @dataclass(slots=True)
@@ -16,7 +17,7 @@ class BlockLexerState:
 
     tokens: list[Token] = field(default_factory=list)
     """
-    The list of tokens produced so f    ar.
+    The list of tokens produced so far.
     """
 
     current_lineno: int = field(default=0)
@@ -59,33 +60,24 @@ class BlockLexerState:
         current_indent_length = 0
         current_indent_width = 0
 
-        with Transient(self.line_descriptors) as line_desciptors_editor:
+        with Transient(self.line_descriptors) as line_descriptors_editor:
             for position, character in enumerate(self.source):
                 if in_leading_whitespaces:
                     if is_space_or_tab(character):
                         current_indent_length += 1
 
-                        # For indentation purposes, tabs behave as if replaced by spaces
-                        # with tab stops every 4 characters.
-                        # https://spec.commonmark.org/0.31.2/#tabs
-                        current_indent_width += (
-                            (
-                                COMMONMARK_TAB_STOP
-                                - current_indent_width % COMMONMARK_TAB_STOP
-                            )
-                            if character == "\t"
-                            else 1
+                        current_indent_width += char_width(
+                            current_column=current_indent_width, character=character
                         )
 
                         continue
                     else:
                         in_leading_whitespaces = False
 
-                #
                 if (
                     is_last_character := (position + 1 >= source_length)
                 ) or character == "\n":
-                    line_desciptors_editor.append(
+                    line_descriptors_editor.append(
                         LineDescriptor(
                             line_start_charno=current_line_start_charno,
                             current_marker_indent_width=0,
@@ -104,7 +96,7 @@ class BlockLexerState:
                     current_indent_length = 0
                     current_indent_width = 0
 
-            line_desciptors_editor.append(
+            line_descriptors_editor.append(
                 LineDescriptor(
                     line_start_charno=source_length,
                     current_marker_indent_width=0,
@@ -201,3 +193,25 @@ class BlockLexerState:
             self.line_descriptors[lineno].current_content_indent_width
             < self.current_block_indent_width
         )
+
+    def resolve_relative_column_offset(
+        self,
+        lineno: int,
+        start: ColumnResolution,
+        column_offset: int,
+        keep_trailing_newline: bool,
+    ) -> ColumnResolution:
+        if start.remaining_columns > column_offset:
+            return ColumnResolution(
+                charno=start.charno,
+                char_width=start.char_width,
+                inner_colno=start.inner_colno + column_offset,
+            )
+
+        column_offset -= start.remaining_columns
+        for charno in range(
+            self.line_descriptors[lineno].current_after_marker_charno,
+            self.line_descriptors[lineno].line_end_charno
+            + (1 if keep_trailing_newline else 0),
+        ):
+            character = self.source[charno]
