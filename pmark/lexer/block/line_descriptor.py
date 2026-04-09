@@ -9,13 +9,15 @@ class LineDescriptor:
     The line is represented as a half-open interval `[line_start_charno, line_end_charno)`.
     The current block (e.g., a blockquote) is composed as:
 
-    current_block = `marker_indent` (visual) + `marker` + `content_indent` (visual) + `content`
+    current_block = `marker_indent` + `marker` + `content_indent` + `content`
 
     where:
-    - `marker_indent` : whitespaces before the marker (measured in visual columns)
+    - `marker_indent` : whitespaces before the marker
     - `marker`        : syntactic token (e.g., '>')
-    - `content_indent`: spaces between marker and content (visual columns)
+    - `content_indent`: whitespaces after marker
     - `content`       : actual text, starting at `current_content_start_charno`
+
+    The field `current_indented_marker_width` stores the total visual width of `marker_indent + marker`.
 
     All character indices are 0-based offsets from the line start.
     Visual column widths assume tab stops every 4 spaces (CommonMark convention).
@@ -26,9 +28,13 @@ class LineDescriptor:
     Character index of the first character of the line (inclusive).
     """
 
-    current_marker_indent_width: int  # bsCount
+    current_indented_marker_width: (
+        int  # bsCount + 1 (visual width of marker, usually 1)
+    )
     """
-    Visual column width of spaces preceding the marker. `0` if no marker.
+    Visual width of the marker *plus indent before it*.
+
+    This is the total visual column offset from the line start to the end of the marker.
     """
 
     current_after_marker_charno: int  # bMark

@@ -58,6 +58,17 @@ def _process_rules_through_next_applicable(
     Returns:
     The command produced by the first applicable rule, or `None` if no rule applies.
     """
+
+    # Invariant:
+    # If parent rule exists,
+    # it should be stored in causal_command.origin_rule_context,
+    # with bounded production (cause it made nested call)
+    parent_production = (
+        None
+        if current_frame.causal_command.origin_rule_context is None
+        else current_frame.causal_command.origin_rule_context.expect_production()
+    )
+
     while current_frame.has_more_rules:
         command = current_frame.current_rule(
             state,
@@ -67,6 +78,7 @@ def _process_rules_through_next_applicable(
                     end_lineno=current_frame.line_span.end_lineno,
                 ),
                 is_speculative_mode=is_speculative_mode,
+                parent_production=parent_production,
             ),
         )
         if is_speculative_mode and (command.kind not in SPECULATIVE_SAFE_COMMAND_KINDS):

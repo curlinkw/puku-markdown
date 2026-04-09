@@ -18,4 +18,6 @@ def paragraph_rule(
         expected_locals_type=ParagraphLocals,
     )
 
+    
+
     return BlockLexerCommand()

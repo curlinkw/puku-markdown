@@ -68,6 +68,15 @@ class BlockLexerRuleContext:
     *locals* dataclass when it begins processing.
     """
 
+    parent_production: BlockLexerRule | None = field(default=None)
+    """
+    The production that directly encloses this rule in the parsing hierarchy.
+
+    `None` when this rule is invoked from the root frame (no enclosing rule).
+    For nested rules, this field identifies the innermost production that
+    initiated the current frame.
+    """
+
     def bind_production(
         self, production: BlockLexerRule, local_attributes: BlockLexerRuleLocals
     ) -> None:
@@ -102,6 +111,26 @@ class BlockLexerRuleContext:
             `True` if the context is bound to a production, `False` otherwise.
         """
         return self.production is not None
+
+    def expect_production(self) -> BlockLexerRule:
+        """
+        Return the production to which this context is bound.
+
+        This method must be called only after `bind_production()` has been invoked.
+        It guarantees that the context has a valid production; otherwise it raises
+        an error, making it suitable for code paths that assume a fully initialized
+        context.
+
+        Returns:
+            The `BlockLexerRule` value previously set by `bind_production()`.
+
+        Raises:
+            RuntimeError: If `bind_production()` has not been called (i.e.,
+                `production` is still `None`).
+        """
+        if self.production is None:
+            raise RuntimeError("Context is not bound to a production")
+        return self.production
 
     def expect_local_attributes(
         self,

@@ -5,6 +5,7 @@ from enum import Enum, auto
 from pmark.lexer.block.frame_spec import BlockLexerFrameSpec
 from pmark.lexer.block.rule_context import BlockLexerRuleContext
 from pmark.lexer.block.upcall import BlockLexerUpcall, BlockLexerUpcallKind
+from pmark.lexer.block.rule import BlockLexerRule
 
 
 class BlockLexerCommandKind(Enum):
