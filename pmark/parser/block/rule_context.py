@@ -2,12 +2,12 @@ from typing import cast
 from dataclasses import dataclass, field
 
 from pmark.line_span import LineSpan
-from pmark.lexer.block.rule import BlockLexerRule
-from pmark.lexer.block.rule_locals import BlockLexerRuleLocals, BlockLexerRuleLocalsT
+from pmark.parser.block.rule import BlockParserRule
+from pmark.parser.block.rule_locals import BlockParserRuleLocals, BlockParserRuleLocalsT
 
 
 @dataclass(slots=True)
-class BlockLexerRuleContext:
+class BlockParserRuleContext:
     line_span: LineSpan
     """
     The line range being processed in this rule.
@@ -16,16 +16,16 @@ class BlockLexerRuleContext:
     is_speculative_mode: bool = field(default=False)
     """
     When enabled, executes rule in speculative parsing mode - only checks if the rule matches
-    at the current position without generating tokens.
+    at the current position without consuming characters.
     """
 
     lookahead_matched: bool | None = field(default=None)
     """
     Stores whether the most recent `LOOKAHEAD_ANY_RULE_MATCHES` command succeeded.
 
-    When a rule issues a `LOOKAHEAD_ANY_RULE_MATCHES` command, the lexer evaluates the
-    specified rule chain in *speculative mode* without consuming input or emitting
-    tokens. If any rule in the chain reaches an accepting state, this field is set
+    When a rule issues a `LOOKAHEAD_ANY_RULE_MATCHES` command, the parser evaluates the
+    specified rule chain in *speculative mode* without consuming input.
+    If any rule in the chain reaches an accepting state, this field is set
     to `True`; otherwise it is set to `False`. After the rule consumes this result (e.g., by resuming
     execution), the field should be reset to `None` to avoid stale state.
 
@@ -35,21 +35,21 @@ class BlockLexerRuleContext:
 
     has_interblock_blank_line: bool | None = field(default=None)
     """
-    Indicates whether the most recently completed nested tokenization produced at least one inter-block blank line.
+    Indicates whether the most recently completed nested parsing produced at least one inter-block blank line.
 
-    When a rule issues a `TOKENIZE_NESTED` command, the lexer suspends the rule and
+    When a rule issues a `PARSE_NESTED` command, the parser suspends the rule and
     processes the nested region. Upon completion, the result (a boolean indicating
     whether the nested frame contains an inter-block blank line) is delivered back
-    to the rule context via an upcall of kind `TOKENIZE_NESTED_RESULT`. This field
+    to the rule context via an upcall of kind `PARSE_NESTED_RESULT`. This field
     stores that value until the rule resumes and consumes it.
 
     The field is `None` when no nested result is pending or after the value has been
     consumed, the field should be reset to `None` to avoid stale state.
     """
 
-    production: BlockLexerRule | None = field(default=None)
+    production: BlockParserRule | None = field(default=None)
     """
-    Discriminant identifying the production (lexer rule) this context belongs to.
+    Discriminant identifying the production (parser rule) this context belongs to.
 
     In attribute grammar terms, each production defines its own set of local attributes.
     This field selects which production's local attribute record is stored in `local_attributes`.
@@ -57,18 +57,18 @@ class BlockLexerRuleContext:
     Initially `None`; the production rule itself must set it to the appropriate rule enum value.
     """
 
-    local_attributes: BlockLexerRuleLocals | None = field(default=None)
+    local_attributes: BlockParserRuleLocals | None = field(default=None)
     """
     Local attributes (temporary variables) of the production.
 
     These are values used only within the rule's execution - neither inherited from
-    the lexer nor synthesized back. The concrete type is determined by `production`.
+    the parser nor synthesized back. The concrete type is determined by `production`.
 
     Initially `None`; the production rule must instantiate and assign the corresponding
     *locals* dataclass when it begins processing.
     """
 
-    parent_production: BlockLexerRule | None = field(default=None)
+    parent_production: BlockParserRule | None = field(default=None)
     """
     The production that directly encloses this rule in the parsing hierarchy.
 
@@ -78,7 +78,7 @@ class BlockLexerRuleContext:
     """
 
     def bind_production(
-        self, production: BlockLexerRule, local_attributes: BlockLexerRuleLocals
+        self, production: BlockParserRule, local_attributes: BlockParserRuleLocals
     ) -> None:
         """
         Bind this context to the given production and its local attributes.
@@ -89,7 +89,7 @@ class BlockLexerRuleContext:
           - `local_attributes` is set to the provided instance (ownership is transferred).
 
         The caller is responsible for ensuring that the `local_attributes` instance
-        matches the production (e.g., `ParagraphLocals` for `BlockLexerRule.PARAGRAPH_RULE`).
+        matches the production (e.g., `ParagraphLocals` for `BlockParserRule.PARAGRAPH_RULE`).
         This method does not validate the match, but in debug builds a runtime assertion can be
         added.
 
@@ -112,7 +112,7 @@ class BlockLexerRuleContext:
         """
         return self.production is not None
 
-    def expect_production(self) -> BlockLexerRule:
+    def expect_production(self) -> BlockParserRule:
         """
         Return the production to which this context is bound.
 
@@ -122,7 +122,7 @@ class BlockLexerRuleContext:
         context.
 
         Returns:
-            The `BlockLexerRule` value previously set by `bind_production()`.
+            The `BlockParserRule` value previously set by `bind_production()`.
 
         Raises:
             RuntimeError: If `bind_production()` has not been called (i.e.,
@@ -134,9 +134,9 @@ class BlockLexerRuleContext:
 
     def expect_local_attributes(
         self,
-        expected_production: BlockLexerRule,
-        expected_locals_type: type[BlockLexerRuleLocalsT],
-    ) -> BlockLexerRuleLocalsT:
+        expected_production: BlockParserRule,
+        expected_locals_type: type[BlockParserRuleLocalsT],
+    ) -> BlockParserRuleLocalsT:
         """
         Retrieve the local attributes for the expected production.
 
@@ -183,4 +183,4 @@ class BlockLexerRuleContext:
             )
 
         # The cast is safe because we verified the type above.
-        return cast(BlockLexerRuleLocalsT, self.local_attributes)
+        return cast(BlockParserRuleLocalsT, self.local_attributes)

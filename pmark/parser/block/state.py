@@ -1,24 +1,18 @@
 from dataclasses import dataclass, field
 
-from pmark.tokens import Token
-from pmark.lexer.block.line_descriptor import LineDescriptor
+from pmark.parser.block.line_descriptor import LineDescriptor
 from pmark.persistent_list import PersistentList, Transient
-from pmark.lexer.block.column_resolution import ColnoWithResolution, ColnoResolution
+from pmark.column_resolution import ColnoWithResolution, ColnoResolution
 from pmark.line_span import LineSpan
 from pmark.pattern_metrics import commonmark_char_width
 from pmark.pattern_predicates import is_space_or_tab
 
 
 @dataclass(slots=True)
-class BlockLexerState:
+class BlockParserState:
     source: str
     """
     Source text.
-    """
-
-    tokens: list[Token] = field(default_factory=list)
-    """
-    The list of tokens produced so far.
     """
 
     current_lineno: int = field(default=0)

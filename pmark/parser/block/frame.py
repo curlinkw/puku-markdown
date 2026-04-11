@@ -2,25 +2,25 @@ from typing import Self
 from dataclasses import dataclass, field
 
 from pmark.line_span import LineSpan
-from pmark.lexer.block.frame_spec import BlockLexerFrameSpec
-from pmark.lexer.block.rule_chain import BlockLexerRuleChain
-from pmark.lexer.block.rule_chains_registry import BLOCK_LEXER_RULE_CHAINS
-from pmark.lexer.block.rule_context import BlockLexerRuleContext
-from pmark.lexer.block.command import BlockLexerCommand
-from pmark.lexer.block.type_aliases import BlockLexerRuleFunc
-from pmark.lexer.block.upcall import BlockLexerUpcall
+from pmark.parser.block.frame_spec import BlockParserFrameSpec
+from pmark.parser.block.rule_chain import BlockParserRuleChain
+from pmark.parser.block.rule_chains_registry import BLOCK_PARSER_RULE_CHAINS
+from pmark.parser.block.rule_context import BlockParserRuleContext
+from pmark.parser.block.command import BlockParserCommand
+from pmark.parser.block.type_aliases import BlockParserRuleFunc
+from pmark.parser.block.upcall import BlockParserUpcall
 
 
 @dataclass(slots=True)
-class BlockLexerFrame:
+class BlockParserFrame:
     """
-    Represents a stack frame in the `BlockLexer` explicit stack machine.
+    Represents a stack frame in the `BlockParser` explicit stack machine.
 
-    Each frame corresponds to a nested lexical context (e.g., a block, expression,
+    Each frame corresponds to a nested parsing context (e.g., a block, expression,
     or nested structure) and contains all state needed to suspend and resume
     processing. Frames are managed explicitly via a stack rather than using
     recursion, enabling deep nesting without stack overflow and providing
-    fine-grained control over the lexing process.
+    fine-grained control over the parsing process.
 
     The frame follows the upcall pattern: when a nested frame completes,
     it writes its result directly back to the parent frame's rule context
@@ -32,21 +32,21 @@ class BlockLexerFrame:
     The line range being processed in this frame.
     """
 
-    rule_chain: BlockLexerRuleChain
+    rule_chain: BlockParserRuleChain
     """
-    Ordered sequence of lexer rules to apply for this frame.
+    Ordered sequence of parser rules to apply for this frame.
     """
 
-    causal_command: BlockLexerCommand
+    causal_command: BlockParserCommand
     """
-    The command that caused this lexical frame to be created.
+    The command that caused this parsing frame to be created.
 
     This field captures the causal relationship in the explicit stack machine:
-    when a parent frame processes a command that requires nested tokenization,
+    when a parent frame processes a command that requires nested parsing,
     that command is stored in the newly created child frame as its `causal_command`.
     """
 
-    current_rule_context: BlockLexerRuleContext | None = field(default=None)
+    current_rule_context: BlockParserRuleContext | None = field(default=None)
     """
     *Mutable* context for the currently active rule.
     """
@@ -61,9 +61,9 @@ class BlockLexerFrame:
     Indicates whether the current frame contains at least one blank line that
     separates two distinct block-level elements.
 
-    In the context of this lexer, a *block is the output of a successfully
+    In the context of this parser, a *block is the output of a successfully
     invoked rule* from the frame's `rule_chain`. A rule signals successful completion
-    by emitting a `COMMIT_SUCCESS` command (see `BlockLexerCommandKind`). Thus, an
+    by emitting a `COMMIT_SUCCESS` command (see `BlockParserCommandKind`). Thus, an
     inter-block blank line occurs when a blank line appears *between* two such
     `COMMIT_SUCCESS` events. Blank lines at the very start of the frame
     (before the first `COMMIT_SUCCESS`) or at the very end (after the last `COMMIT_SUCCESS`)
@@ -74,17 +74,17 @@ class BlockLexerFrame:
     @classmethod
     def from_spec(
         cls: type[Self],
-        spec: BlockLexerFrameSpec,
-        causal_command: BlockLexerCommand,
+        spec: BlockParserFrameSpec,
+        causal_command: BlockParserCommand,
         current_ruleno: int = 0,
     ) -> Self:
         """
-        Create a `BlockLexerFrame` from a `BlockLexerFrameSpec` object.
+        Create a `BlockParserFrame` from a `BlockParserFrameSpec` object.
 
         This factory method initialises a frame using the data provided in `spec`,
         while allowing the caller to override the initial rule index and the causal
         command. It serves as the primary way to instantiate frames when starting
-        a new lexical context based on a pre-defined specification.
+        a new parsing context based on a pre-defined specification.
 
         Args:
             spec: The frame specification containing the line span, rule chain,
@@ -96,7 +96,7 @@ class BlockLexerFrame:
                 through the explicit stack. Defaults to `None`.
 
         Returns:
-            A new `BlockLexerFrame` instance constructed from the given spec
+            A new `BlockParserFrame` instance constructed from the given spec
             and optional overrides.
 
         Note:
@@ -112,12 +112,12 @@ class BlockLexerFrame:
             causal_command=causal_command,
         )
 
-    def create_child_from_command(self, command: BlockLexerCommand) -> Self:
+    def create_child_from_command(self, command: BlockParserCommand) -> Self:
         """
         Create a child frame from a command that contains a frame specification.
 
         The command must be of a kind that includes a frame spec (e.g.,
-        `TOKENIZE_NESTED` or `LOOKAHEAD_ANY_RULE_MATCHES`). This method calls
+        `PARSE_NESTED` or `LOOKAHEAD_ANY_RULE_MATCHES`). This method calls
         `command.expect_frame_spec()` to obtain the spec and uses it to build
         the new frame, also recording the command as the causal origin.
 
@@ -133,13 +133,13 @@ class BlockLexerFrame:
         )
 
     @property
-    def current_rule(self) -> BlockLexerRuleFunc:
+    def current_rule(self) -> BlockParserRuleFunc:
         """Return the rule at the `current_ruleno`.
 
         Returns:
-            BlockLexerRuleFunc: The rule at the current position.
+            BlockParserRuleFunc: The rule at the current position.
         """
-        return BLOCK_LEXER_RULE_CHAINS[self.rule_chain][self.current_ruleno]
+        return BLOCK_PARSER_RULE_CHAINS[self.rule_chain][self.current_ruleno]
 
     @property
     def has_more_rules(self) -> bool:
@@ -150,7 +150,7 @@ class BlockLexerFrame:
                 rule list (i.e., there is at least one rule remaining),
                 otherwise `False`.
         """
-        return self.current_ruleno < len(BLOCK_LEXER_RULE_CHAINS[self.rule_chain])
+        return self.current_ruleno < len(BLOCK_PARSER_RULE_CHAINS[self.rule_chain])
 
     def reset_ruleno(self) -> None:
         """Reset the `current_ruleno` to the beginning."""
@@ -174,7 +174,9 @@ class BlockLexerFrame:
         """
         return self.current_rule_context is not None
 
-    def capture_current_rule_context(self, rule_context: BlockLexerRuleContext) -> None:
+    def capture_current_rule_context(
+        self, rule_context: BlockParserRuleContext
+    ) -> None:
         """Capture the current rule's suspension context, taking ownership.
 
         This method stores the provided `rule_context`, marking the current rule as
@@ -224,7 +226,7 @@ class BlockLexerFrame:
             )
         self.current_rule_context = None
 
-    def expect_current_rule_context(self) -> BlockLexerRuleContext:
+    def expect_current_rule_context(self) -> BlockParserRuleContext:
         """
         Return the `self.current_rule_context`, asserting that it exists.
 
@@ -234,7 +236,7 @@ class BlockLexerFrame:
         checks, by performing a runtime validation.
 
         Returns:
-            BlockLexerRuleContext: The saved context of the suspended rule, guaranteed to be
+            BlockParserRuleContext: The saved context of the suspended rule, guaranteed to be
             `not None`.
 
         Raises:
@@ -254,7 +256,7 @@ class BlockLexerFrame:
             )
         return self.current_rule_context
 
-    def expect_causal_command(self) -> BlockLexerCommand:
+    def expect_causal_command(self) -> BlockParserCommand:
         """
         Return the `self.causal_command`, asserting that it exists.
 
@@ -265,7 +267,7 @@ class BlockLexerFrame:
         performing a runtime validation.
 
         Returns:
-            BlockLexerCommand: The command that caused this frame to be created,
+            BlockParserCommand: The command that caused this frame to be created,
             guaranteed to be `not None`.
 
         Raises:
@@ -279,7 +281,7 @@ class BlockLexerFrame:
             )
         return self.causal_command
 
-    def return_upcall(self, upcall: BlockLexerUpcall) -> None:
+    def return_upcall(self, upcall: BlockParserUpcall) -> None:
         """
         Complete this frame and deliver the upcall result to its creator.
 
@@ -287,11 +289,11 @@ class BlockLexerFrame:
         and has produced an upcall object. It retrieves the causal command that
         created this frame (via `expect_causal_command()`) and delegates delivery
         of the upcall to that command's `deliver_upcall` method. After this call,
-        the frame is considered finished and should be popped from the lexer stack.
+        the frame is considered finished and should be popped from the parser stack.
 
         Args:
             upcall: The upcall object containing the result of this frame's
-                execution. Its structure is defined by `BlockLexerUpcall` and
+                execution. Its structure is defined by `BlockParserUpcall` and
                 its kind must be compatible with the command that initiated
                 the frame (e.g., a `LOOKAHEAD_ANY_RULE_MATCHES` command expects a
                 `LOOKAHEAD_ANY_RULE_MATCHED` upcall).

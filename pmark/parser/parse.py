@@ -1,12 +1,11 @@
-from pmark.tokens import Token
 from pmark.re_patterns import LINE_ENDINGS_RE
 from pmark.constants import NULL_CHARACTER, UNICODE_REPLACEMENT_CHARACTER
-from pmark.lexer.block.state import BlockLexerState
+from pmark.parser.block.state import BlockParserState
 
 
-def tokenize(
+def parse(
     source: str,
-) -> list[Token]:
+) -> None:
     """
     # TODO
     """

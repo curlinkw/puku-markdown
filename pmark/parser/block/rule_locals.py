@@ -2,8 +2,8 @@
 Runtime union of all production-specific `rule-locals` and its bounded type variable.
 
 This module defines:
-- `BlockLexerRuleLocals`: a union of every concrete locals dataclass.
-- `BlockLexerRuleLocalsT`: a type variable bound to that union.
+- `BlockParserRuleLocals`: a union of every concrete locals dataclass.
+- `BlockParserRuleLocalsT`: a type variable bound to that union.
 
 Design decisions:
 - The union is built by directly importing the concrete locals classes (no
@@ -18,9 +18,9 @@ Design decisions:
 
 from typing import TypeVar
 
-from pmark.lexer.block.commonmark.rules.locals import ParagraphLocals
+from pmark.parser.block.commonmark.rules.locals import ParagraphLocals
 
 
-BlockLexerRuleLocals = ParagraphLocals
+BlockParserRuleLocals = ParagraphLocals
 
-BlockLexerRuleLocalsT = TypeVar("BlockLexerRuleLocalsT", bound=BlockLexerRuleLocals)
+BlockParserRuleLocalsT = TypeVar("BlockParserRuleLocalsT", bound=BlockParserRuleLocals)

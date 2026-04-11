@@ -1,35 +1,35 @@
 from pmark.line_span import LineSpan
-from pmark.lexer.block.state import BlockLexerState
-from pmark.lexer.block.frame import BlockLexerFrame
-from pmark.lexer.block.command import (
-    BlockLexerCommand,
-    BlockLexerCommandKind,
+from pmark.parser.block.state import BlockParserState
+from pmark.parser.block.frame import BlockParserFrame
+from pmark.parser.block.command import (
+    BlockParserCommand,
+    BlockParserCommandKind,
     APPLICABLE_COMMAND_KINDS,
     NESTING_COMMAND_KINDS,
     SPECULATIVE_SAFE_COMMAND_KINDS,
 )
-from pmark.lexer.block.rule_chain import BlockLexerRuleChain
-from pmark.lexer.block.rule_context import BlockLexerRuleContext
-from pmark.lexer.block.upcall import BlockLexerUpcall, BlockLexerUpcallKind
+from pmark.parser.block.rule_chain import BlockParserRuleChain
+from pmark.parser.block.rule_context import BlockParserRuleContext
+from pmark.parser.block.upcall import BlockParserUpcall, BlockParserUpcallKind
 
 
 def _process_command(
-    frames: list[BlockLexerFrame],
-    current_frame: BlockLexerFrame,
-    command: BlockLexerCommand,
+    frames: list[BlockParserFrame],
+    current_frame: BlockParserFrame,
+    command: BlockParserCommand,
 ) -> None:
     """Apply a command to the frame stack and current frame."""
 
     match command.kind:
-        case BlockLexerCommandKind.COMMIT_SUCCESS:
+        case BlockParserCommandKind.COMMIT_SUCCESS:
             current_frame.reset_ruleno()
 
-        case BlockLexerCommandKind.COMMIT_REJECTION:
+        case BlockParserCommandKind.COMMIT_REJECTION:
             current_frame.increment_ruleno()
 
         case (
-            BlockLexerCommandKind.TOKENIZE_NESTED
-            | BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES
+            BlockParserCommandKind.PARSE_NESTED
+            | BlockParserCommandKind.LOOKAHEAD_ANY_RULE_MATCHES
         ):
             if not current_frame.is_current_rule_suspended:
                 # Invariant:
@@ -43,11 +43,11 @@ def _process_command(
 
 
 def _process_rules_through_next_applicable(
-    frames: list[BlockLexerFrame],
-    state: BlockLexerState,
-    current_frame: BlockLexerFrame,
+    frames: list[BlockParserFrame],
+    state: BlockParserState,
+    current_frame: BlockParserFrame,
     is_speculative_mode: bool,
-) -> BlockLexerCommand | None:
+) -> BlockParserCommand | None:
     """Process rules of the current frame sequentially until an applicable command appears.
 
     The name uses `through` to indicate inclusive processing: the rule that yields the
@@ -72,7 +72,7 @@ def _process_rules_through_next_applicable(
     while current_frame.has_more_rules:
         command = current_frame.current_rule(
             state,
-            BlockLexerRuleContext(
+            BlockParserRuleContext(
                 line_span=LineSpan(
                     start_lineno=state.current_lineno,
                     end_lineno=current_frame.line_span.end_lineno,
@@ -94,27 +94,27 @@ def _process_rules_through_next_applicable(
     return None
 
 
-def _lex_through_next_applicable_rule(
-    frames: list[BlockLexerFrame],
-    state: BlockLexerState,
-    current_frame: BlockLexerFrame,
+def _parse_through_next_applicable_rule(
+    frames: list[BlockParserFrame],
+    state: BlockParserState,
+    current_frame: BlockParserFrame,
     is_first_call_in_frame: bool,
-) -> BlockLexerCommand | None:
-    """Lex until the next applicable rule, process it, and return its command.
+) -> BlockParserCommand | None:
+    """Parse until the next applicable rule, process it, and return its command.
 
-    If the lexer is no longer inside the block's scope, the function returns
+    If the parser is no longer inside the block's scope, the function returns
     `None` without producing a command.
 
     Args:
-        frames: The current stack of lexer frames (may be mutated by nested processing).
-        state: The global lexer state (line number, position, etc.).
+        frames: The current stack of parser frames (may be mutated by nested processing).
+        state: The global parser state (line number, position, etc.).
         current_frame: The frame to operate on.
         is_first_call_in_frame: `True` if this is the first call of this function
             for `current_frame`; `False` for subsequent calls.
 
     Returns:
         The command produced by the applicable rule,
-        or `None` if the lexer is no longer inside the block's scope
+        or `None` if the parser is no longer inside the block's scope
     """
     if state.current_lineno not in current_frame.line_span:
         return None
@@ -150,15 +150,15 @@ def _lex_through_next_applicable_rule(
     return command
 
 
-def _lex_frame(
-    frames: list[BlockLexerFrame],
-    state: BlockLexerState,
-    current_frame: BlockLexerFrame,
-) -> BlockLexerUpcall | None:
+def _parse_frame(
+    frames: list[BlockParserFrame],
+    state: BlockParserState,
+    current_frame: BlockParserFrame,
+) -> BlockParserUpcall | None:
     """Process commands within a frame until a nesting command or end of frame.
 
     Returns:
-        `None` if a nesting command was processed, otherwise a `BlockLexerUpcall`
+        `None` if a nesting command was processed, otherwise a `BlockParserUpcall`
         that signals the frame is complete.
     """
 
@@ -177,22 +177,22 @@ def _lex_frame(
         # Invariant: If the frame is not suspended, there is no active rule
         # context, so this must be the very first time we enter the frame.
 
-        command = _lex_through_next_applicable_rule(
+        command = _parse_through_next_applicable_rule(
             frames=frames,
             state=state,
             current_frame=current_frame,
             is_first_call_in_frame=True,
         )
         if command is None:
-            return BlockLexerUpcall(
-                kind=BlockLexerUpcallKind.TOKENIZE_NESTED_RESULT,
+            return BlockParserUpcall(
+                kind=BlockParserUpcallKind.PARSE_NESTED_RESULT,
                 payload=current_frame.has_interblock_blank_line,
             )
         if command.kind in NESTING_COMMAND_KINDS:
             return None
 
     while (
-        command := _lex_through_next_applicable_rule(
+        command := _parse_through_next_applicable_rule(
             frames=frames,
             state=state,
             current_frame=current_frame,
@@ -204,23 +204,23 @@ def _lex_frame(
 
     # Invariant:
     # no nesting commands
-    # -> the lexer is no longer inside the block's scope
+    # -> the parser is no longer inside the block's scope
     # -> frame complete
-    return BlockLexerUpcall(
-        kind=BlockLexerUpcallKind.TOKENIZE_NESTED_RESULT,
+    return BlockParserUpcall(
+        kind=BlockParserUpcallKind.PARSE_NESTED_RESULT,
         payload=current_frame.has_interblock_blank_line,
     )
 
 
 def _lookahead_any_rule_matches(
-    frames: list[BlockLexerFrame],
-    state: BlockLexerState,
-    current_frame: BlockLexerFrame,
-) -> BlockLexerUpcall | None:
+    frames: list[BlockParserFrame],
+    state: BlockParserState,
+    current_frame: BlockParserFrame,
+) -> BlockParserUpcall | None:
     """Check if any rule in the current frame's rule chain matches in speculative mode.
 
     Returns:
-        `None` if a nesting command was processed, otherwise a `BlockLexerUpcall`
+        `None` if a nesting command was processed, otherwise a `BlockParserUpcall`
         that signals the frame is complete.
     """
     command = _process_rules_through_next_applicable(
@@ -231,25 +231,25 @@ def _lookahead_any_rule_matches(
     )
 
     if command is None:
-        return BlockLexerUpcall(
-            kind=BlockLexerUpcallKind.LOOKAHEAD_ANY_RULE_MATCHED, payload=False
+        return BlockParserUpcall(
+            kind=BlockParserUpcallKind.LOOKAHEAD_ANY_RULE_MATCHED, payload=False
         )
 
-    if command.kind is BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES:
+    if command.kind is BlockParserCommandKind.LOOKAHEAD_ANY_RULE_MATCHES:
         return None
 
-    return BlockLexerUpcall(
-        kind=BlockLexerUpcallKind.LOOKAHEAD_ANY_RULE_MATCHED, payload=True
+    return BlockParserUpcall(
+        kind=BlockParserUpcallKind.LOOKAHEAD_ANY_RULE_MATCHED, payload=True
     )
 
 
-def block_tokenize(state: BlockLexerState, initial_rule_chain: BlockLexerRuleChain):
+def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChain):
     frames = [
-        BlockLexerFrame(
+        BlockParserFrame(
             line_span=LineSpan(start_lineno=0, end_lineno=state.line_count),
             rule_chain=initial_rule_chain,
-            causal_command=BlockLexerCommand(
-                kind=BlockLexerCommandKind.INITIALIZE_ROOT_FRAME
+            causal_command=BlockParserCommand(
+                kind=BlockParserCommandKind.INITIALIZE_ROOT_FRAME
             ),
         )
     ]
@@ -259,13 +259,13 @@ def block_tokenize(state: BlockLexerState, initial_rule_chain: BlockLexerRuleCha
 
         match current_frame.causal_command.kind:
             case (
-                BlockLexerCommandKind.TOKENIZE_NESTED
-                | BlockLexerCommandKind.INITIALIZE_ROOT_FRAME
+                BlockParserCommandKind.PARSE_NESTED
+                | BlockParserCommandKind.INITIALIZE_ROOT_FRAME
             ):
-                upcall = _lex_frame(
+                upcall = _parse_frame(
                     frames=frames, state=state, current_frame=current_frame
                 )
-            case BlockLexerCommandKind.LOOKAHEAD_ANY_RULE_MATCHES:
+            case BlockParserCommandKind.LOOKAHEAD_ANY_RULE_MATCHES:
                 upcall = _lookahead_any_rule_matches(
                     frames=frames, state=state, current_frame=current_frame
                 )
