@@ -68,15 +68,6 @@ class BlockParserRuleContext:
     *locals* dataclass when it begins processing.
     """
 
-    parent_production: BlockParserRule | None = field(default=None)
-    """
-    The production that directly encloses this rule in the parsing hierarchy.
-
-    `None` when this rule is invoked from the root frame (no enclosing rule).
-    For nested rules, this field identifies the innermost production that
-    initiated the current frame.
-    """
-
     def bind_production(
         self, production: BlockParserRule, local_attributes: BlockParserRuleLocals
     ) -> None:

@@ -4,6 +4,7 @@ from pmark.parser.block.line_descriptor import LineDescriptor
 from pmark.persistent_list import PersistentList, Transient
 from pmark.column_resolution import ColnoWithResolution, ColnoResolution
 from pmark.line_span import LineSpan
+from pmark.elements import Document
 from pmark.pattern_metrics import commonmark_char_width
 from pmark.pattern_predicates import is_space_or_tab
 
@@ -13,6 +14,11 @@ class BlockParserState:
     source: str
     """
     Source text.
+    """
+
+    target_document: Document
+    """
+    Output document under construction. Root blocks are appended as parsing progresses.
     """
 
     current_lineno: int = field(default=0)

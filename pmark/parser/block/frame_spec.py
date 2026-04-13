@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pmark.line_span import LineSpan
 from pmark.parser.block.rule_chain import BlockParserRuleChain
 from pmark.parser.block.rule_context import BlockParserRuleContext
+from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 
 
 @dataclass(slots=True, frozen=True)
@@ -34,6 +35,15 @@ class BlockParserFrameSpec:
     rule_chain: BlockParserRuleChain
     """
     Ordered sequence of parser rules to apply for this frame.
+    """
+
+    actuals: BlockParserFrameActuals
+    """
+    Concrete caller-side values supplied by this frame to a block rule.
+
+    This field holds the actual arguments that this frame (as caller)
+    provides when invoking a rule. The rule receives this data as its
+    inherited attributes. Storing actuals marks this frame as the caller.
     """
 
     current_rule_context: BlockParserRuleContext | None = field(default=None)

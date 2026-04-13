@@ -11,6 +11,7 @@ from pmark.parser.block.command import (
 from pmark.parser.block.rule_chain import BlockParserRuleChain
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.upcall import BlockParserUpcall, BlockParserUpcallKind
+from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 
 
 def _process_command(
@@ -58,27 +59,16 @@ def _process_rules_through_next_applicable(
     Returns:
     The command produced by the first applicable rule, or `None` if no rule applies.
     """
-
-    # Invariant:
-    # If parent rule exists,
-    # it should be stored in causal_command.origin_rule_context,
-    # with bounded production (cause it made nested call)
-    parent_production = (
-        None
-        if current_frame.causal_command.origin_rule_context is None
-        else current_frame.causal_command.origin_rule_context.expect_production()
-    )
-
     while current_frame.has_more_rules:
         command = current_frame.current_rule(
             state,
+            current_frame.actuals,
             BlockParserRuleContext(
                 line_span=LineSpan(
                     start_lineno=state.current_lineno,
                     end_lineno=current_frame.line_span.end_lineno,
                 ),
                 is_speculative_mode=is_speculative_mode,
-                parent_production=parent_production,
             ),
         )
         if is_speculative_mode and (command.kind not in SPECULATIVE_SAFE_COMMAND_KINDS):
@@ -164,7 +154,7 @@ def _parse_frame(
 
     if current_frame.is_current_rule_suspended:
         command = current_frame.current_rule(
-            state, current_frame.expect_current_rule_context()
+            state, current_frame.actuals, current_frame.expect_current_rule_context()
         )
         _process_command(frames=frames, current_frame=current_frame, command=command)
 
@@ -251,6 +241,7 @@ def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChai
             causal_command=BlockParserCommand(
                 kind=BlockParserCommandKind.INITIALIZE_ROOT_FRAME
             ),
+            actuals=BlockParserFrameActuals(),
         )
     ]
 

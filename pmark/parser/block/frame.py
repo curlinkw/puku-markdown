@@ -9,6 +9,7 @@ from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.parser.block.type_aliases import BlockParserRuleFunc
 from pmark.parser.block.upcall import BlockParserUpcall
+from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 
 
 @dataclass(slots=True)
@@ -44,6 +45,15 @@ class BlockParserFrame:
     This field captures the causal relationship in the explicit stack machine:
     when a parent frame processes a command that requires nested parsing,
     that command is stored in the newly created child frame as its `causal_command`.
+    """
+
+    actuals: BlockParserFrameActuals
+    """
+    Concrete caller-side values supplied by this frame to a block rule.
+
+    This field holds the actual arguments that this frame (as caller)
+    provides when invoking a rule. The rule receives this data as its
+    inherited attributes. Storing actuals marks this frame as the caller.
     """
 
     current_rule_context: BlockParserRuleContext | None = field(default=None)
@@ -108,6 +118,7 @@ class BlockParserFrame:
             line_span=spec.line_span,
             rule_chain=spec.rule_chain,
             current_rule_context=spec.current_rule_context,
+            actuals=spec.actuals,
             current_ruleno=current_ruleno,
             causal_command=causal_command,
         )
