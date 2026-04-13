@@ -50,3 +50,24 @@ class BlockParserFrameActuals:
     This field represents the parent in the output AST, distinct from
     `parent_production` which tracks the parser rule hierarchy.
     """
+
+    paragraph_line_limit: int | None = field(default=None)
+    """
+    Exclusive line index that limits paragraph continuation.
+
+    If `None`, defaults to `state.line_count`. Id est, parser must parse until end of block.
+    """
+
+    def try_attach_parent(self, block: BlockElement) -> bool:
+        """Attach the frame's parent block to the given block, if present.
+
+        If `self.parent_block` is `None`, does nothing and returns `False`.
+        Otherwise, sets `block.parent = self.parent_block` and returns `True`.
+
+        Args:
+            block: The block element to become a child of the parent block.
+        """
+        if self.parent_block is None:
+            return False
+        block.parent = self.parent_block
+        return True

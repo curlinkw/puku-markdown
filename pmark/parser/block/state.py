@@ -7,6 +7,7 @@ from pmark.line_span import LineSpan
 from pmark.elements import Document
 from pmark.pattern_metrics import commonmark_char_width
 from pmark.pattern_predicates import is_space_or_tab
+from pmark.constants import INDENTED_CODE_BLOCK_MIN
 
 
 @dataclass(slots=True)
@@ -396,3 +397,29 @@ class BlockParserState:
             )
             for lineno in range(line_span.start_lineno, line_span.end_lineno)
         )
+
+    def meets_indented_code_block_indent(self, lineno: int) -> bool:
+        """
+        Return True if the line's content indentation exceeds the current block's
+        indentation by at least `INDENTED_CODE_BLOCK_MIN` (4 spaces).
+
+        Indented code blocks in CommonMark are defined relative to the enclosing
+        block's indentation level. For example, inside a list item that already has
+        2 spaces of indentation, a line needs 6 total spaces (2 block + 4 extra) to
+        start an indented code block.
+
+        Args:
+            lineno: Line index (0-based) within the current block.
+
+        Returns:
+            True if the relative indentation meets or exceeds the threshold,
+            otherwise False.
+
+        Note:
+            This is a *necessary* condition only. The caller must also enforce
+            that an indented code block cannot interrupt a paragraph.
+        """
+        return (
+            self.line_descriptors[lineno].current_content_indent_width
+            - self.current_block_indent_width
+        ) >= INDENTED_CODE_BLOCK_MIN

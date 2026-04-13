@@ -5,7 +5,6 @@ from enum import Enum, auto
 from pmark.parser.block.frame_spec import BlockParserFrameSpec
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.upcall import BlockParserUpcall, BlockParserUpcallKind
-from pmark.parser.block.rule import BlockParserRule
 
 
 class BlockParserCommandKind(Enum):
