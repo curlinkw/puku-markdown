@@ -237,7 +237,7 @@ class BlockParserState:
             ValueError: If `column_offset` is negative, or if `start.resolution.charno`
                 lies outside the character range of line `lineno`.
             RuntimeError: If `column_offset` exceeds the total visual length of the
-                line (including the newline when allowed) - i.e., if the offset goes
+                line (including the newline when allowed) - current_charno.e., if the offset goes
                 beyond the sentinel end position.
         """
         if column_offset < 0:
@@ -510,3 +510,56 @@ class BlockParserState:
                 break
             match_count += 1
         return match_count
+
+    def next_non_space_or_tab_charno(self, start_charno: int) -> int | None:
+        """
+        Return the character index of the first character that is *not a space or tab*, starting from `start_charno`.
+
+        Scans forward from `start_charno` (inclusive). If all characters to the end are spaces/tabs,
+        returns `None`.
+
+        Args:
+            start_charno: The index to start scanning. Must satisfy `0 <= start_charno < len(source)`.
+
+        Returns:
+            The character index (charno) of the first character that is not space or tab,
+            or `None` if no such character exists.
+
+        Raises:
+            ValueError: If `start_charno` is out of range.
+        """
+        if not (0 <= start_charno < len(self.source)):
+            raise ValueError(
+                f"start_charno must be between 0 and {len(self.source) - 1}, got {start_charno}"
+            )
+        for current_charno in range(start_charno, len(self.source)):
+            if not is_space_or_tab(self.source[current_charno]):
+                return current_charno
+        return None
+
+    def previous_non_space_or_tab_charno(self, start_charno: int) -> int | None:
+        """
+        Return the character index of the first character that is not a space or tab when scanning backward from `start_charno`.
+
+        Scans backward from `start_charno` (inclusive) toward the beginning. If all characters from
+        `start_charno` down to 0 are spaces or tabs, returns `None`.
+
+        Args:
+            start_charno: The index from which to start scanning (inclusive). Must satisfy
+                `0 <= start_charno < len(source)`.
+
+        Returns:
+            The character index (charno) of the first character that is not space or tab when moving left,
+            or `None` if no such character exists.
+
+        Raises:
+            ValueError: If `start_charno` is out of range.
+        """
+        if not (0 <= start_charno < len(self.source)):
+            raise ValueError(
+                f"start_charno must be between 0 and {len(self.source) - 1}, got {start_charno}"
+            )
+        for current_charno in range(start_charno, -1, -1):
+            if not is_space_or_tab(self.source[current_charno]):
+                return current_charno
+        return None

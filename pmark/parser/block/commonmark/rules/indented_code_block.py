@@ -59,6 +59,7 @@ def indented_code_block_rule(
 
     state.current_lineno = current_lineno
     block = IdentedCodeBlock(
+        parent=None,
         content=state.indent_reduced_block_content(
             line_span=LineSpan(
                 start_lineno=context.line_span.start_lineno, end_lineno=last_lineno
@@ -67,7 +68,7 @@ def indented_code_block_rule(
             + state.current_block_indent_width,
             keep_trailing_newline=False,
         )
-        + "\n"
+        + "\n",
     )
 
     if not inherited_attributes.try_attach_parent(block):

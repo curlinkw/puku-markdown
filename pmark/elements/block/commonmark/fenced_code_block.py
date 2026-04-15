@@ -4,5 +4,7 @@ from pmark.elements.block.base import BlockElement
 
 
 @dataclass(slots=True)
-class ThematicBreak(BlockElement):
+class FencedCodeBlock(BlockElement):
     markup: str
+    info_string: str
+    content: str

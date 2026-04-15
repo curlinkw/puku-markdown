@@ -49,7 +49,7 @@ def paragraph_rule(
                     if inherited_attributes.paragraph_line_limit is None
                     else inherited_attributes.paragraph_line_limit
                 ),
-                block_element=Paragraph(),
+                block_element=Paragraph(parent=None, content=""),
             ),
         )
 
