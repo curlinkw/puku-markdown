@@ -32,6 +32,13 @@ def paragraph_rule(
     inherited_attributes: BlockParserFrameActuals,
     context: BlockParserRuleContext,
 ) -> BlockParserCommand:
+    """
+    Paragraph rule.
+    """
+
+    if context.is_speculative_mode:
+        return BlockParserCommand.with_commit_success_kind()
+
     if not context.is_bound_to_production:
         context.bind_production(
             production=BlockParserRule.PARAGRAPH_RULE,
@@ -59,7 +66,7 @@ def paragraph_rule(
     if context.lookahead_matched is not None:
         if context.lookahead_matched:
             _finalize(state=state, local_attrs=local_attrs, context=context)
-            return BlockParserCommand(kind=BlockParserCommandKind.COMMIT_SUCCESS)
+            return BlockParserCommand.with_commit_success_kind()
         else:
             local_attrs.current_lineno += 1
         context.lookahead_matched = None
@@ -83,7 +90,7 @@ def paragraph_rule(
                     start_lineno=local_attrs.current_lineno,
                     end_lineno=local_attrs.end_lineno,
                 ),
-                rule_chain=BlockParserRuleChain.PARAGRAPH_TERMINATION_RULE_CHAIN,
+                rule_chain=BlockParserRuleChain.PARAGRAPH_TERMINATION,
                 actuals=BlockParserFrameActuals(
                     parent_production=context.production,
                     parent_block=local_attrs.block_element,
@@ -94,4 +101,4 @@ def paragraph_rule(
 
     _finalize(state=state, local_attrs=local_attrs, context=context)
 
-    return BlockParserCommand(kind=BlockParserCommandKind.COMMIT_SUCCESS)
+    return BlockParserCommand.with_commit_success_kind()

@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Final, Self
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -147,6 +147,20 @@ class BlockParserCommand:
     with a context (e.g., synthetic commands injected by the parser itself),
     this field must be `None`.
     """
+
+    @classmethod
+    def with_commit_success_kind(cls) -> Self:
+        """
+        Return a command whose kind is `COMMIT_SUCCESS`.
+        """
+        return cls(kind=BlockParserCommandKind.COMMIT_SUCCESS)
+
+    @classmethod
+    def with_commit_rejection_kind(cls) -> Self:
+        """
+        Return a command whose kind is `COMMIT_REJECTION`.
+        """
+        return cls(kind=BlockParserCommandKind.COMMIT_REJECTION)
 
     def expect_child_frame_spec(self) -> BlockParserFrameSpec:
         """

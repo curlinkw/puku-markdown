@@ -7,7 +7,7 @@ from pmark.line_span import LineSpan
 from pmark.elements import Document
 from pmark.pattern_metrics import commonmark_char_width
 from pmark.pattern_predicates import is_space_or_tab
-from pmark.constants import INDENTED_CODE_BLOCK_MIN
+from pmark.constants import INDENTED_CODE_BLOCK_MIN_INDENT
 
 
 @dataclass(slots=True)
@@ -401,7 +401,7 @@ class BlockParserState:
     def meets_indented_code_block_indent(self, lineno: int) -> bool:
         """
         Return True if the line's content indentation exceeds the current block's
-        indentation by at least `INDENTED_CODE_BLOCK_MIN` (4 spaces).
+        indentation by at least `INDENTED_CODE_BLOCK_MIN_INDENT` (4 spaces).
 
         Indented code blocks in CommonMark are defined relative to the enclosing
         block's indentation level. For example, inside a list item that already has
@@ -422,4 +422,91 @@ class BlockParserState:
         return (
             self.line_descriptors[lineno].current_content_indent_width
             - self.current_block_indent_width
-        ) >= INDENTED_CODE_BLOCK_MIN
+        ) >= INDENTED_CODE_BLOCK_MIN_INDENT
+
+    def is_content_start_beyond_source(self, lineno: int) -> bool:
+        """
+        Return True if the line's content start index is at or past the end of the source string.
+
+        Equivalent to `line.current_content_start_charno >= len(source)`. This occurs when a line
+        has no parseable characters (e.g., a blank line or a line that starts after EOF).
+
+        Args:
+            lineno: Line index (0-based) within the current block.
+
+        Returns:
+            True if the line's content start is beyond the source end, otherwise False.
+        """
+        return self.line_descriptors[lineno].current_content_start_charno >= len(
+            self.source
+        )
+
+    def count_run_of_char(self, start_charno: int, character: str | None = None) -> int:
+        """
+        Return the number of consecutive characters equal to `character` starting at `start_charno`.
+
+        Scans forward from `start_charno` (inclusive). If `character` is `None`, uses the character
+        at `start_charno` as the character to match. Counts until a different character or end of source.
+
+        Args:
+            start_charno: The index from which to start scanning. Must satisfy
+                `0 <= start_charno < len(self.source)`.
+            character: The character to match. If `None`, defaults to `self.source[start_charno]`.
+
+        Returns:
+            The count of consecutive matching characters starting at `start_charno`.
+
+        Raises:
+            ValueError: If `start_charno` is outside the inclusive range `[0, len(self.source)-1]`.
+        """
+        if not (0 <= start_charno < len(self.source)):
+            raise ValueError(
+                f"start_charno must be between 0 and {len(self.source) - 1} inclusive, got {start_charno}"
+            )
+
+        if character is None:
+            character = self.source[start_charno]
+
+        match_count = 0
+        for current_charno in range(start_charno, len(self.source)):
+            if self.source[current_charno] != character:
+                break
+            match_count += 1
+        return match_count
+
+    def backward_count_run_of_char(
+        self, start_charno: int, character: str | None = None
+    ) -> int:
+        """
+        Return the number of consecutive characters equal to `character` ending at `start_charno`.
+
+        Scans backward from `start_charno` (inclusive) toward the beginning. If `character` is `None`,
+        uses the character at `start_charno` as the character to match. Counts until a different
+        character or the start of source.
+
+        Args:
+            start_charno: The index from which to start scanning (inclusive). Must satisfy
+                `0 <= start_charno < len(source)`.
+            character: The character to match. If `None`, defaults to `self.source[start_charno]`.
+
+        Returns:
+            The count of consecutive matching characters ending at `start_charno`.
+            Returns 0 if the character at `start_charno` is not equal to the effective `character`.
+
+        Raises:
+            ValueError: If `start_charno` is outside `[0, len(source)-1]`.
+        """
+        if not (0 <= start_charno < len(self.source)):
+            raise ValueError(
+                f"start_charno must be between 0 and {len(self.source) - 1} inclusive, got {start_charno}"
+            )
+
+        if character is None:
+            character = self.source[start_charno]
+
+        match_count = 0
+        for current_charno in range(start_charno, -1, -1):
+            if self.source[current_charno] != character:
+                break
+            match_count += 1
+        return match_count

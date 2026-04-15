@@ -16,9 +16,11 @@ Design decisions:
   a separate `type_vars.py` module.
 """
 
-from typing import TypeVar
+from typing import TypeVar, Union
 
-from pmark.parser.block.commonmark.rules.locals import ParagraphLocals
+from pmark.parser.block.commonmark.rules.locals import (
+    ParagraphLocals,
+)
 
 
 BlockParserRuleLocals = ParagraphLocals

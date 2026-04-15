@@ -21,4 +21,4 @@ def parse(
     # is spec-compliant and simplifies the parser by only needing to handle \n.
     source = LINE_ENDINGS_RE.sub("\n", source)
 
-    return []
+    return None

@@ -73,3 +73,12 @@ class LineDescriptor:
     This flag is set by block rules (e.g., blockquote, list) when they detect a line that
     belongs to the current block but lacks the expected marker.
     """
+
+    @property
+    def current_content_length(self) -> int:
+        """
+        Length of the line's actual content, excluding marker and indentation.
+
+        Equivalent to `line_end_charno - current_content_start_charno`.
+        """
+        return self.line_end_charno - self.current_content_start_charno
