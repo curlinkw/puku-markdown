@@ -27,9 +27,14 @@ See Also:
 
 NULL_CHARACTER: Final[str] = "\0"
 
+HASH_CHARACTER: Final[str] = "#"
+"""
+Hash/number sign character used as the ATX heading marker in CommonMark.
+"""
+
 UNICODE_REPLACEMENT_CHARACTER: Final[str] = "\ufffd"
 
-BACKTICK_CHAR: Final[str] = "`"
+BACKTICK_CHARACTER: Final[str] = "`"
 
 INDENTED_CODE_BLOCK_MIN_INDENT: Final[int] = 4
 """Minimum indentation required for a line to be part of an indented code block.

@@ -7,7 +7,7 @@ from pmark.line_span import LineSpan
 from pmark.constants import (
     FENCED_CODE_BLOCK_MARKERS,
     FENCED_CODE_BLOCK_MIN_MARKER_COUNT,
-    BACKTICK_CHAR,
+    BACKTICK_CHARACTER,
 )
 
 
@@ -31,10 +31,10 @@ def fenced_code_block_rule(
     """
 
     start_lineno = context.line_span.start_lineno
-    start_line_desciptor = state.line_descriptors[start_lineno]
+    start_line_descriptor = state.line_descriptors[start_lineno]
 
     if __debug__:
-        if start_line_desciptor.is_lazy_continuation:
+        if start_line_descriptor.is_lazy_continuation:
             raise RuntimeError(
                 f"Internal parser error: lazy continuation line {start_lineno} "
                 "was not consumed by the previous block rule."
@@ -43,10 +43,13 @@ def fenced_code_block_rule(
     if state.meets_indented_code_block_indent(start_lineno):
         return BlockParserCommand.with_commit_rejection_kind()
 
-    if start_line_desciptor.current_content_length < FENCED_CODE_BLOCK_MIN_MARKER_COUNT:
+    if (
+        start_line_descriptor.current_content_length
+        < FENCED_CODE_BLOCK_MIN_MARKER_COUNT
+    ):
         return BlockParserCommand.with_commit_rejection_kind()
 
-    start_marker_charno = start_line_desciptor.current_content_start_charno
+    start_marker_charno = start_line_descriptor.current_content_start_charno
     start_marker = state.source[start_marker_charno]
 
     if start_marker not in FENCED_CODE_BLOCK_MARKERS:
@@ -63,10 +66,11 @@ def fenced_code_block_rule(
         start_marker_charno : start_marker_charno + start_markup_length
     ]
     start_info_string = state.source[
-        start_marker_charno + start_markup_length : start_line_desciptor.line_end_charno
+        start_marker_charno
+        + start_markup_length : start_line_descriptor.line_end_charno
     ]
 
-    if (start_marker == BACKTICK_CHAR) and (start_marker in start_info_string):
+    if (start_marker == BACKTICK_CHARACTER) and (start_marker in start_info_string):
         return BlockParserCommand.with_commit_rejection_kind()
 
     if context.is_speculative_mode:
@@ -137,7 +141,7 @@ def fenced_code_block_rule(
             line_span=LineSpan(
                 start_lineno=start_lineno + 1, end_lineno=current_lineno
             ),
-            reduction_width=start_line_desciptor.current_content_indent_width,
+            reduction_width=start_line_descriptor.current_content_indent_width,
             keep_trailing_newline=True,
         ),
     )
