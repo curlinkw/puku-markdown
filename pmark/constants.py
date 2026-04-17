@@ -82,3 +82,12 @@ See Also:
     CommonMark Spec 0.31.2, Section 4.5:
     https://spec.commonmark.org/0.31.2/#fenced-code-blocks
 """
+
+ATX_HEADING_MAX_LEVEL: Final[int] = 6
+"""
+Maximum heading level for an ATX heading, corresponding to six '#' characters.
+
+See Also:
+    CommonMark Spec 0.31.2, Section 4.2 (ATX headings):
+    https://spec.commonmark.org/0.31.2/#atx-headings
+"""

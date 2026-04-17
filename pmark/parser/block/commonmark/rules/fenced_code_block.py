@@ -56,7 +56,9 @@ def fenced_code_block_rule(
         return BlockParserCommand.with_commit_rejection_kind()
 
     start_markup_length = state.count_run_of_char(
-        start_charno=start_marker_charno, character=start_marker
+        start_charno=start_marker_charno,
+        end_charno=start_line_descriptor.line_end_charno,
+        character=start_marker,
     )
 
     if start_markup_length < FENCED_CODE_BLOCK_MIN_MARKER_COUNT:
@@ -80,8 +82,10 @@ def fenced_code_block_rule(
     has_closing_fence: bool = False
 
     while current_lineno < context.line_span.end_lineno:
+        current_line_descriptor = state.line_descriptors[current_lineno]
+
         if __debug__:
-            if state.line_descriptors[current_lineno].is_lazy_continuation:
+            if current_line_descriptor.is_lazy_continuation:
                 raise RuntimeError(
                     f"Internal parser error: lazy continuation line {current_lineno} "
                     "was not consumed by the previous block rule."
@@ -95,9 +99,11 @@ def fenced_code_block_rule(
         if state.is_content_start_beyond_source(current_lineno):
             break
 
-        current_marker_charno = state.line_descriptors[
-            current_lineno
-        ].current_content_start_charno
+        if state.is_blank_line(current_lineno):
+            current_lineno += 1
+            continue
+
+        current_marker_charno = current_line_descriptor.current_content_start_charno
         current_marker = state.source[current_marker_charno]
 
         if current_marker != start_marker:
@@ -109,26 +115,32 @@ def fenced_code_block_rule(
             continue
 
         current_markup_length = state.count_run_of_char(
-            current_marker_charno, current_marker
+            start_charno=current_marker_charno,
+            end_charno=current_line_descriptor.line_end_charno,
+            character=current_marker,
         )
 
         if current_markup_length < start_markup_length:
             current_lineno += 1
             continue
 
-        next_non_space_or_tab = state.next_non_space_or_tab_charno(
+        if (
             current_marker_charno + current_markup_length
+            >= current_line_descriptor.line_end_charno
+        ):
+            has_closing_fence = True
+            break
+
+        next_non_space_or_tab = state.next_non_space_or_tab_charno(
+            start_charno=current_marker_charno + current_markup_length,
+            end_charno=current_line_descriptor.line_end_charno,
         )
 
-        if (next_non_space_or_tab is not None) and (
-            next_non_space_or_tab
-            < state.line_descriptors[current_lineno].line_end_charno
-        ):
+        if next_non_space_or_tab is not None:
             current_lineno += 1
             continue
 
         has_closing_fence = True
-
         break
 
     state.current_lineno = current_lineno + (1 if has_closing_fence else 0)

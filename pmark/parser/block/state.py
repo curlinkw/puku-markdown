@@ -441,125 +441,188 @@ class BlockParserState:
             self.source
         )
 
-    def count_run_of_char(self, start_charno: int, character: str | None = None) -> int:
+    def count_run_of_char(
+        self,
+        start_charno: int,
+        end_charno: int | None = None,
+        character: str | None = None,
+    ) -> int:
         """
-        Return the number of consecutive characters equal to `character` starting at `start_charno`.
+        Count consecutive occurrences of `character` in `self.source[start_charno:end_charno]`.
 
-        Scans forward from `start_charno` (inclusive). If `character` is `None`, uses the character
-        at `start_charno` as the character to match. Counts until a different character or end of source.
+        Scans forward from `start_charno` (inclusive) until a character different from `character`
+        is found, or until `end_charno` (exclusive) is reached.
+        If `character` is `None`, the character at `start_charno` is used as the match target.
 
         Args:
-            start_charno: The index from which to start scanning. Must satisfy
-                `0 <= start_charno < len(self.source)`.
-            character: The character to match. If `None`, defaults to `self.source[start_charno]`.
+            start_charno: Start index (inclusive). Must satisfy `0 <= start_charno < len(self.source)`.
+            end_charno: Exclusive upper bound. If `None`, defaults to `len(self.source)`.
+                        Must satisfy `start_charno < end_charno <= len(self.source)`.
+            character: The character to match. If `None`, uses `self.source[start_charno]`.
 
         Returns:
-            The count of consecutive matching characters starting at `start_charno`.
+            Number of consecutive matching characters in the range `[start_charno, end_charno)`.
+            If `character` is provided and does not equal the character at `start_charno`,
+            returns `0` (because the first character already fails to match).
 
         Raises:
-            ValueError: If `start_charno` is outside the inclusive range `[0, len(self.source)-1]`.
+            ValueError: If the range `[start_charno, end_charno)` is invalid, i.e.:
+                        - `start_charno < 0` or `start_charno >= len(self.source)`
+                        - `end_charno > len(self.source)`
+                        - `start_charno >= end_charno` (empty range not allowed)
         """
-        if not (0 <= start_charno < len(self.source)):
+        source_len = len(self.source)
+
+        if end_charno is None:
+            end_charno = source_len
+
+        if not (0 <= start_charno < end_charno <= source_len):
             raise ValueError(
-                f"start_charno must be between 0 and {len(self.source) - 1} inclusive, got {start_charno}"
+                f"Invalid range: start_charno={start_charno}, end_charno={end_charno}, "
+                f"source_len={source_len}. Must satisfy 0 <= start < end <= source_len"
             )
 
         if character is None:
             character = self.source[start_charno]
 
         match_count = 0
-        for current_charno in range(start_charno, len(self.source)):
+        for current_charno in range(start_charno, end_charno):
             if self.source[current_charno] != character:
                 break
             match_count += 1
         return match_count
 
     def backward_count_run_of_char(
-        self, start_charno: int, character: str | None = None
+        self,
+        start_charno: int,
+        boundary_charno: int | None = None,
+        character: str | None = None,
     ) -> int:
         """
-        Return the number of consecutive characters equal to `character` ending at `start_charno`.
+        Count consecutive occurrences of `character` ending at `start_charno` in `self.source`.
 
-        Scans backward from `start_charno` (inclusive) toward the beginning. If `character` is `None`,
-        uses the character at `start_charno` as the character to match. Counts until a different
-        character or the start of source.
+        Scans backward from `start_charno` (inclusive) toward the beginning until a character
+        different from `character` is found, or until `boundary_charno` (exclusive) is reached.
+        If `character` is `None`, the character at `start_charno` is used as the match target.
 
         Args:
-            start_charno: The index from which to start scanning (inclusive). Must satisfy
-                `0 <= start_charno < len(source)`.
-            character: The character to match. If `None`, defaults to `self.source[start_charno]`.
+            start_charno: Start index (inclusive). Must satisfy `0 <= start_charno < len(self.source)`.
+            boundary_charno: Exclusive lower bound. If `None`, defaults to `-1` (meaning scan
+                            until before index -1, i.e., include index 0).
+                            Must satisfy `-1 <= boundary_charno < start_charno`.
+            character: The character to match. If `None`, uses `self.source[start_charno]`.
 
         Returns:
-            The count of consecutive matching characters ending at `start_charno`.
-            Returns 0 if the character at `start_charno` is not equal to the effective `character`.
+            Number of consecutive matching characters in the range `(boundary_charno, start_charno]`.
+            If `character` is provided and does not equal the character at `start_charno`,
+            returns `0` (the first character already fails to match).
 
         Raises:
-            ValueError: If `start_charno` is outside `[0, len(source)-1]`.
+            ValueError: If the range `(boundary_charno, start_charno]` is invalid, i.e.:
+                        - `start_charno < 0` or `start_charno >= len(self.source)`
+                        - `boundary_charno < -1` or `boundary_charno >= start_charno`
+                        - `boundary_charno` is not `None` and violates the above.
         """
-        if not (0 <= start_charno < len(self.source)):
+        source_len = len(self.source)
+
+        if boundary_charno is None:
+            boundary_charno = -1
+
+        if not (-1 <= boundary_charno < start_charno < source_len):
             raise ValueError(
-                f"start_charno must be between 0 and {len(self.source) - 1} inclusive, got {start_charno}"
+                f"Invalid range: boundary_charno={boundary_charno}, start_charno={start_charno}, "
+                f"source_len={source_len}. Must satisfy -1 <= boundary < start < source_len"
             )
 
         if character is None:
             character = self.source[start_charno]
 
         match_count = 0
-        for current_charno in range(start_charno, -1, -1):
+        for current_charno in range(start_charno, boundary_charno, -1):
             if self.source[current_charno] != character:
                 break
             match_count += 1
         return match_count
 
-    def next_non_space_or_tab_charno(self, start_charno: int) -> int | None:
+    def next_non_space_or_tab_charno(
+        self,
+        start_charno: int,
+        end_charno: int | None = None,
+    ) -> int | None:
         """
-        Return the character index of the first character that is *not a space or tab*, starting from `start_charno`.
+        Return the index of the first character that is *not a space or tab* in `self.source[start_charno:end_charno]`.
 
-        Scans forward from `start_charno` (inclusive). If all characters to the end are spaces/tabs,
-        returns `None`.
+        Scans forward from `start_charno` (inclusive) until `end_charno` (exclusive).
+        If no such character is found within the range, returns `None`.
 
         Args:
-            start_charno: The index to start scanning. Must satisfy `0 <= start_charno < len(source)`.
+            start_charno: Start index (inclusive). Must satisfy `0 <= start_charno < len(self.source)`.
+            end_charno: Exclusive upper bound. If `None`, defaults to `len(self.source)`.
+                        Must satisfy `start_charno < end_charno <= len(self.source)`.
 
         Returns:
-            The character index (charno) of the first character that is not space or tab,
-            or `None` if no such character exists.
+            The character index (charno) of the first character that is not a space or tab,
+            or `None` if all characters in the range are spaces/tabs.
 
         Raises:
-            ValueError: If `start_charno` is out of range.
+            ValueError: If the range `[start_charno, end_charno)` is invalid, i.e.:
+                        - `start_charno < 0` or `start_charno >= len(self.source)`
+                        - `end_charno > len(self.source)`
+                        - `start_charno >= end_charno` (empty range not allowed)
         """
-        if not (0 <= start_charno < len(self.source)):
+        source_len = len(self.source)
+
+        if end_charno is None:
+            end_charno = source_len
+
+        if not (0 <= start_charno < end_charno <= source_len):
             raise ValueError(
-                f"start_charno must be between 0 and {len(self.source) - 1}, got {start_charno}"
+                f"Invalid range: start_charno={start_charno}, end_charno={end_charno}, "
+                f"source_len={source_len}. Must satisfy 0 <= start < end <= source_len"
             )
-        for current_charno in range(start_charno, len(self.source)):
+
+        for current_charno in range(start_charno, end_charno):
             if not is_space_or_tab(self.source[current_charno]):
                 return current_charno
         return None
 
-    def previous_non_space_or_tab_charno(self, start_charno: int) -> int | None:
+    def previous_non_space_or_tab_charno(
+        self,
+        start_charno: int,
+        boundary_charno: int | None = None,
+    ) -> int | None:
         """
-        Return the character index of the first character that is not a space or tab when scanning backward from `start_charno`.
+        Return the index of the first character that is *not a space or tab* when scanning backward in `self.source`.
 
-        Scans backward from `start_charno` (inclusive) toward the beginning. If all characters from
-        `start_charno` down to 0 are spaces or tabs, returns `None`.
+        Scans backward from `start_charno` (inclusive) toward the beginning until a non-space/tab is found,
+        or until `boundary_charno` (exclusive) is reached.
+        If no such character is found within the range, returns `None`.
 
         Args:
-            start_charno: The index from which to start scanning (inclusive). Must satisfy
-                `0 <= start_charno < len(source)`.
+            start_charno: Start index (inclusive). Must satisfy `0 <= start_charno < len(self.source)`.
+            boundary_charno: Exclusive lower bound. If `None`, defaults to `-1` (meaning scan down to
+                            and including index 0). Must satisfy `-1 <= boundary_charno < start_charno`.
 
         Returns:
-            The character index (charno) of the first character that is not space or tab when moving left,
-            or `None` if no such character exists.
+            The character index (charno) of the first character that is not a space or tab,
+            or `None` if all characters in the range `(boundary_charno, start_charno]` are spaces/tabs.
 
         Raises:
-            ValueError: If `start_charno` is out of range.
+            ValueError: If `start_charno` is out of range, or `boundary_charno` is invalid.
         """
-        if not (0 <= start_charno < len(self.source)):
+        source_len = len(self.source)
+
+        if boundary_charno is None:
+            boundary_charno = -1
+
+        if not (-1 <= boundary_charno < start_charno < source_len):
             raise ValueError(
-                f"start_charno must be between 0 and {len(self.source) - 1}, got {start_charno}"
+                f"Invalid range: boundary_charno={boundary_charno}, start_charno={start_charno}, "
+                f"source_len={source_len}. Must satisfy -1 <= boundary < start < source_len"
             )
-        for current_charno in range(start_charno, -1, -1):
+
+        for current_charno in range(start_charno, boundary_charno, -1):
             if not is_space_or_tab(self.source[current_charno]):
                 return current_charno
+
         return None
