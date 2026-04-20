@@ -32,6 +32,11 @@ HASH_CHARACTER: Final[str] = "#"
 Hash/number sign character used as the ATX heading marker in CommonMark.
 """
 
+LESS_THAN_CHARACTER: Final[str] = "<"
+"""
+The less-than sign character '<' (Unicode U+003C).
+"""
+
 UNICODE_REPLACEMENT_CHARACTER: Final[str] = "\ufffd"
 
 BACKTICK_CHARACTER: Final[str] = "`"
@@ -90,4 +95,78 @@ Maximum heading level for an ATX heading, corresponding to six '#' characters.
 See Also:
     CommonMark Spec 0.31.2, Section 4.2 (ATX headings):
     https://spec.commonmark.org/0.31.2/#atx-headings
+"""
+
+HTML_BLOCK_NAMES: Final[tuple[str, ...]] = (
+    "address",
+    "article",
+    "aside",
+    "base",
+    "basefont",
+    "blockquote",
+    "body",
+    "caption",
+    "center",
+    "col",
+    "colgroup",
+    "dd",
+    "details",
+    "dialog",
+    "dir",
+    "div",
+    "dl",
+    "dt",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "frame",
+    "frameset",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "head",
+    "header",
+    "hr",
+    "html",
+    "iframe",
+    "legend",
+    "li",
+    "link",
+    "main",
+    "menu",
+    "menuitem",
+    "nav",
+    "noframes",
+    "ol",
+    "optgroup",
+    "option",
+    "p",
+    "param",
+    "search",
+    "section",
+    "summary",
+    "table",
+    "tbody",
+    "td",
+    "tfoot",
+    "th",
+    "thead",
+    "title",
+    "tr",
+    "track",
+    "ul",
+)
+"""
+List of HTML block-level tag names as defined by the CommonMark specification.
+
+This list is used to construct the regex for matching block-level HTML tags
+(CommonMark HTML block type 6). The tags are matched case-insensitively
+(using `re.IGNORECASE` flag) because HTML tag names are case-insensitive.
+
+Reference: https://spec.commonmark.org/0.31.2/#html-blocks
 """
