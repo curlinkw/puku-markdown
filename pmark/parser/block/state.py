@@ -117,23 +117,21 @@ class BlockParserState:
         self._compute_line_descriptors()
 
     def is_blank_line(self, lineno: int) -> bool:
-        """Determine if a line contains only whitespace or is completely empty.
+        """
+        Return True if the specified line contains no non-whitespace characters.
 
-        A line is considered blank if, after skipping all leading whitespace characters,
-        there are no remaining characters before the line ends. This includes lines that
-        are completely empty as well as lines containing only spaces and/or tabs.
+        This method delegates to `LineDescriptor.is_blank`, which determines blankness
+        by checking whether the content start index is at or beyond the line end index.
+
+        A line is considered blank if it is empty or consists only of spaces/tabs.
 
         Args:
             lineno: Zero-based index of the line to check.
 
         Returns:
-            True if the line consists solely of whitespace or is empty, False if it
-            contains any non-whitespace characters.
+            True if the line is blank, False otherwise.
         """
-        return (
-            self.line_descriptors[lineno].current_content_start_charno
-            >= self.line_descriptors[lineno].line_end_charno
-        )
+        return self.line_descriptors[lineno].is_blank
 
     @property
     def is_preceded_by_blank_line(self) -> bool:

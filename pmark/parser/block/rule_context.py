@@ -80,7 +80,7 @@ class BlockParserRuleContext:
           - `local_attributes` is set to the provided instance (ownership is transferred).
 
         The caller is responsible for ensuring that the `local_attributes` instance
-        matches the production (e.g., `ParagraphLocals` for `BlockParserRule.PARAGRAPH_RULE`).
+        matches the production (e.g., `ParagraphLocals` for `BlockParserRule.PARAGRAPH`).
         This method does not validate the match, but in debug builds a runtime assertion can be
         added.
 

@@ -1,8 +1,7 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from pmark.line_span import LineSpan
 from pmark.parser.block.rule_chain import BlockParserRuleChain
-from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 
 
@@ -44,9 +43,4 @@ class BlockParserFrameSpec:
     This field holds the actual arguments that this frame (as caller)
     provides when invoking a rule. The rule receives this data as its
     inherited attributes. Storing actuals marks this frame as the caller.
-    """
-
-    current_rule_context: BlockParserRuleContext | None = field(default=None)
-    """
-    *Mutable* context for the currently active rule.
     """

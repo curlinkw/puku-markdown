@@ -20,9 +20,10 @@ from typing import TypeVar, Union
 
 from pmark.parser.block.commonmark.rules.locals import (
     ParagraphLocals,
+    SetextHeadingLocals,
 )
 
 
-BlockParserRuleLocals = ParagraphLocals
+BlockParserRuleLocals = Union[ParagraphLocals, SetextHeadingLocals]
 
 BlockParserRuleLocalsT = TypeVar("BlockParserRuleLocalsT", bound=BlockParserRuleLocals)

@@ -86,6 +86,7 @@ class BlockParserFrame:
         cls: type[Self],
         spec: BlockParserFrameSpec,
         causal_command: BlockParserCommand,
+        current_rule_context: BlockParserRuleContext | None = None,
         current_ruleno: int = 0,
     ) -> Self:
         """
@@ -117,8 +118,8 @@ class BlockParserFrame:
         return cls(
             line_span=spec.line_span,
             rule_chain=spec.rule_chain,
-            current_rule_context=spec.current_rule_context,
             actuals=spec.actuals,
+            current_rule_context=current_rule_context,
             current_ruleno=current_ruleno,
             causal_command=causal_command,
         )

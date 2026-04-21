@@ -170,3 +170,31 @@ This list is used to construct the regex for matching block-level HTML tags
 
 Reference: https://spec.commonmark.org/0.31.2/#html-blocks
 """
+
+SETEXT_HEADING_MARKERS: Final[frozenset[str]] = frozenset({"-", "="})
+"""Markers that denote Setext headings (CommonMark section 4.2, version 0.31.2).
+
+A line consisting entirely of `=` characters (optionally with trailing spaces)
+indicates a level-1 heading. A line consisting entirely of `-` characters
+indicates a level-2 heading. The marker line must appear immediately after the
+heading text (with no blank line in between).
+
+Reference: https://spec.commonmark.org/0.31.2/#setext-headings
+"""
+
+HYPHEN_MINUS_CHARACTER: Final[str] = "-"
+"""
+The hyphen-minus character '-' (Unicode U+002D).
+
+This character is used as a hyphen, minus sign, or dash. In Markdown,
+it appears in Setext headings (level-2), unordered lists, and horizontal rules.
+"""
+
+EQUALS_SIGN_CHARACTER: Final[str] = "="
+"""
+The equals sign '=' (Unicode U+003D).
+
+In Markdown, this character is used in Setext headings (level-1) and as a
+delimiter for fenced code blocks (with backticks). It also appears in
+HTML attributes and link definitions.
+"""

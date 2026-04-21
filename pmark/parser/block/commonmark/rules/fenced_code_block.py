@@ -92,14 +92,14 @@ def fenced_code_block_rule(
                 )
 
         if state.is_line_outdented(current_lineno) and (
-            not state.is_blank_line(current_lineno)
+            not current_line_descriptor.is_blank
         ):
             break
 
         if state.is_content_start_beyond_source(current_lineno):
             break
 
-        if state.is_blank_line(current_lineno):
+        if current_line_descriptor.is_blank:
             current_lineno += 1
             continue
 

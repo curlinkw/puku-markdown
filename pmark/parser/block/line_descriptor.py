@@ -82,3 +82,18 @@ class LineDescriptor:
         Equivalent to `line_end_charno - current_content_start_charno`.
         """
         return self.line_end_charno - self.current_content_start_charno
+
+    @property
+    def is_blank(self) -> bool:
+        """
+        Return True if the line contains no non-whitespace characters.
+
+        A line is considered blank when the character index of the first content
+        (`current_content_start_charno`) is at or beyond the end of the line
+        (`line_end_charno`). This includes completely empty lines and lines that
+        consist solely of whitespace (spaces/tabs).
+
+        Returns:
+            True if the line is blank, False otherwise.
+        """
+        return self.current_content_start_charno >= self.line_end_charno

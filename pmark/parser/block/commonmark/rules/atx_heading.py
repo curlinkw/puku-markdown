@@ -75,7 +75,7 @@ def atx_heading_rule(
     if state.meets_indented_code_block_indent(start_lineno):
         return BlockParserCommand.with_commit_rejection_kind()
 
-    if state.is_blank_line(start_lineno):
+    if start_line_descriptor.is_blank:
         return BlockParserCommand.with_commit_rejection_kind()
 
     marker_charno = start_line_descriptor.current_content_start_charno
