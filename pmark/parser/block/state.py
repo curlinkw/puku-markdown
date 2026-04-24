@@ -140,38 +140,65 @@ class BlockParserState:
         """
         return self.current_lineno > 0 and self.is_blank_line(self.current_lineno - 1)
 
-    def next_non_blank_lineno(self, start_lineno: int) -> int:
-        """Find the next line index (>= start_lineno) that is not blank.
+    def next_non_blank_lineno(
+        self, start_lineno: int, end_lineno: int | None = None
+    ) -> int:
+        """Return the first line index >= start_lineno that is not blank.
+
+        The search stops at (but does not include) `end_lineno`. If no non-blank
+        line is found within the range, `end_lineno` is returned (or `line_count`
+        when `end_lineno` is `None`).
 
         Args:
-            start_lineno: The line index from which to start searching (inclusive).
+            start_lineno: Index of the first line to check (inclusive).
+            end_lineno:   Exclusive upper bound for the search. If `None`, the
+                        search goes to the end of the document (`self.line_count`).
 
         Returns:
-            The index of the next non-blank line, or `line_count` if none found.
+            The line index of the first non-blank line, or `end_lineno` (or
+            `self.line_count`) if no such line exists in the range.
+
+        Raises:
+            ValueError: If `start_lineno` is out of the valid range
+                `[0, end_lineno)`.
         """
+        if end_lineno is None:
+            end_lineno = self.line_count
+
+        if not (0 <= start_lineno < end_lineno):
+            raise ValueError(
+                f"start_lineno {start_lineno} must be in range [0, {end_lineno})"
+            )
+
         return next(
             (
                 lineno
-                for lineno in range(start_lineno, self.line_count)
+                for lineno in range(start_lineno, end_lineno)
                 if not self.is_blank_line(lineno)
             ),
-            self.line_count,
+            end_lineno,
         )
 
-    def skip_blank_lines(self) -> None:
-        """Advance current line position past any consecutive blank lines.
+    def skip_blank_lines(self, end_lineno: int | None = None) -> None:
+        """Advance the current line position past consecutive blank lines.
 
-        Moves `current_lineno` forward until a non-blank line is found or the
-        end of document is reached.
+        The scan starts at `self.current_lineno` and continues until a non-blank
+        line is found or the search limit (`end_lineno`) is reached. After the
+        call, `self.current_lineno` points to either:
+        - The next non-blank line (if any exists within the limit)
+        - `end_lineno` (or `self.line_count` when `end_lineno is None`) if no
+        non-blank line is found.
+
+        Args:
+            end_lineno: Exclusive upper bound for the search. If `None`, the
+                        search goes to the end of the document (`self.line_count`).
 
         Note:
-            This is a state-changing operation. After calling this method,
-            `current_lineno` will point to either:
-            - The next non-blank line (if any exists)
-            - `self.line_count` (if no non-blank lines remain)
+            This method mutates `self.current_lineno`. It does not return a value.
         """
         self.current_lineno = self.next_non_blank_lineno(
-            start_lineno=self.current_lineno
+            start_lineno=self.current_lineno,
+            end_lineno=end_lineno,
         )
 
     def is_line_outdented(self, lineno: int) -> bool:
@@ -624,3 +651,78 @@ class BlockParserState:
                 return current_charno
 
         return None
+
+    def resolve_next_non_space_or_tab(
+        self,
+        start: ColnoWithResolution,
+        end_charno: int | None = None,
+    ) -> ColnoWithResolution:
+        """
+        Advance past consecutive spaces and tabs, returning the column position after them.
+
+        Starting from the resolved character index and column given by `start`, this method
+        consumes all leading spaces and tabs up to (but not including) `end_charno`.
+        It returns a new `ColnoWithResolution` whose `colno` is the original column plus
+        the total visual width of the consumed whitespace, and whose `resolution` points to:
+
+        - the first character that is neither space nor tab (if any), or
+        - `end_charno` if the entire scanned range consists only of whitespace.
+
+        If the character at the starting position is not a space or tab, the method returns
+        `start` unchanged (no characters are consumed).
+
+        Args:
+            start: Starting column and character index.
+            end_charno: Exclusive character index limit. If `None`, scans to the end of
+                the source string.
+
+        Returns:
+            A `ColnoWithResolution` representing the column after the whitespace run,
+            with a resolution that includes the character index of the first non-whitespace
+            (or `end_charno`) and its visual width (0 when at the limit).
+
+        Raises:
+            ValueError: If the starting character index is out of range or not less than
+                `end_charno` (when provided).
+        """
+        if end_charno is None:
+            end_charno = len(self.source)
+
+        start_charno = start.resolution.charno
+        if not (0 <= start_charno < end_charno):
+            raise ValueError(
+                f"Invalid start character index {start_charno}; expected 0 <= start < {end_charno}"
+            )
+
+        if not is_space_or_tab(self.source[start_charno]):
+            return start
+
+        consumed_width = start.resolution.remaining_columns
+
+        for current_charno in range(start_charno + 1, end_charno):
+            current_char = self.source[current_charno]
+            current_char_width = commonmark_char_width(
+                start_colno=consumed_width + start.colno,
+                character=current_char,
+            )
+
+            if not is_space_or_tab(current_char):
+                return ColnoWithResolution(
+                    colno=start.colno + consumed_width,
+                    resolution=ColnoResolution(
+                        charno=current_charno,
+                        char_width=current_char_width,
+                        inner_colno=0,
+                    ),
+                )
+
+            consumed_width += current_char_width
+
+        return ColnoWithResolution(
+            colno=start.colno + consumed_width,
+            resolution=ColnoResolution(
+                charno=end_charno,
+                char_width=0,
+                inner_colno=0,
+            ),
+        )

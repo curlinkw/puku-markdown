@@ -28,9 +28,7 @@ class LineDescriptor:
     Character index of the first character of the line (inclusive).
     """
 
-    current_indented_marker_width: (
-        int  # bsCount + 1 (visual width of marker, usually 1)
-    )
+    current_indented_marker_width: int  # bsCount
     """
     Visual width of the marker *plus indent before it*.
 
@@ -97,3 +95,13 @@ class LineDescriptor:
             True if the line is blank, False otherwise.
         """
         return self.current_content_start_charno >= self.line_end_charno
+
+    @property
+    def current_content_start_colno(self) -> int:
+        """Return the visual column number where the actual content begins.
+
+        This is the sum of:
+        - `current_indented_marker_width` (visual width of marker plus its indent)
+        - `current_content_indent_width` (visual width of spaces between marker and content)
+        """
+        return self.current_indented_marker_width + self.current_content_indent_width

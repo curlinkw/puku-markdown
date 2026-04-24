@@ -1,4 +1,4 @@
-from pmark.constants import COMMONMARK_TAB_STOP
+from pmark.constants import COMMONMARK_TAB_STOP, TAB_CHARACTER
 
 
 def commonmark_char_width(start_colno: int, character: str) -> int:
@@ -21,6 +21,6 @@ def commonmark_char_width(start_colno: int, character: str) -> int:
     """
     return (
         (COMMONMARK_TAB_STOP - (start_colno % COMMONMARK_TAB_STOP))
-        if character == "\t"
+        if character == TAB_CHARACTER
         else 1
     )

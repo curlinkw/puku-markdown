@@ -7,3 +7,4 @@ class BlockParserRule(Enum):
     PARAGRAPH = auto()
     THEMATIC_BREAK = auto()
     SETEXT_HEADING = auto()
+    BLOCKQUOTE = auto()

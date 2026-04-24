@@ -37,6 +37,20 @@ LESS_THAN_CHARACTER: Final[str] = "<"
 The less-than sign character '<' (Unicode U+003C).
 """
 
+GREATER_THAN_CHARACTER: Final[str] = ">"
+"""The greater-than sign character '>' (Unicode U+003E).
+"""
+
+SPACE_CHARACTER: Final[str] = " "
+"""
+The space character ' ' (Unicode U+0020).
+"""
+
+TAB_CHARACTER: Final[str] = "\t"
+"""
+The tab character '\\t' (Unicode U+0009, CHARACTER TABULATION).
+"""
+
 UNICODE_REPLACEMENT_CHARACTER: Final[str] = "\ufffd"
 
 BACKTICK_CHARACTER: Final[str] = "`"

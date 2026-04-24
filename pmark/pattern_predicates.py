@@ -1,3 +1,6 @@
+from pmark.constants import TAB_CHARACTER, SPACE_CHARACTER
+
+
 def is_space_or_tab(character: str) -> bool:
     """
     Return True if char is ASCII space (U+0020) or tab (U+0009).
@@ -8,4 +11,4 @@ def is_space_or_tab(character: str) -> bool:
 
     Reference: https://spec.commonmark.org/0.31.2/#tabs
     """
-    return character in ("\t", " ")
+    return character in (TAB_CHARACTER, SPACE_CHARACTER)
