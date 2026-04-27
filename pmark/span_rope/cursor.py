@@ -91,83 +91,115 @@ class SpanRopeCursor:
             span_index=self._span_index, charno=self._charno
         )
 
-    def advance(self, delta: int) -> None:
-        """
-        Move the cursor forward (positive delta) or backward (negative delta) by the \
-            given number of logical character positions.
+    def advance_backward(self, distance: int) -> None:
+        """Move the cursor backward by the given number of logical character positions.
 
-        For small deltas (typically <=5) this method traverses spans incrementally without
-        performing a full binary search, making it optimal for linear scanning.
+        This method traverses spans incrementally, making it optimal for small
+        backward steps (typically <= 5) in linear scanning.
 
         Args:
-            delta: Number of characters to move. Positive moves forward, negative backward.
+            distance: Number of characters to move backward. Must be non-negative.
                 Zero has no effect.
 
         Raises:
-            IndexError: If the resulting logical offset would be outside the rope bounds
-                (less than 0 or greater than or equal to len(rope)).
-        """
+            ValueError: If `distance` is negative.
+            IndexError: If the cursor would move past the start of the rope
+                (i.e., `self.logical_offset - distance < 0`).
 
-        if delta == 0:
+        Note:
+            Equivalent to `advance(-distance)` but enforces non-negative distance.
+        """
+        if distance < 0:
+            raise ValueError(
+                f"advance_backward distance must be non-negative, got {distance}"
+            )
+
+        if distance == 0:
             return
 
-        distance = abs(delta)
+        if self.logical_offset < distance:
+            raise IndexError(
+                f"Cannot move backward {distance} from logical offset {self.logical_offset} "
+                f"(would go below 0)"
+            )
 
-        if delta < 0:
-            if self.logical_offset < distance:
-                raise IndexError(
-                    f"Cannot advance {delta} from logical offset {self.logical_offset}"
-                )
+        _current_span = self._rope.get_span(self._span_index)
 
-            _current_span = self._rope.get_span(self._span_index)
+        # Maximum distance we can move backward without leaving the current span
+        _current_span_capacity = self._charno - _current_span.start_charno
 
-            # Maximum distance we can move backward without leaving the current span
-            _current_span_capacity = self._charno - _current_span.start_charno
+        if distance <= _current_span_capacity:
+            self._charno -= distance
+            return
 
-            if distance <= _current_span_capacity:
-                self._charno -= distance
+        distance -= _current_span_capacity
+
+        for span_index in range(self._span_index - 1, -1, -1):
+            # Invariant:
+            # distance > 0 here
+
+            _current_span = self._rope.get_span(span_index)
+
+            if distance <= _current_span.length:
+                self._span_index = span_index
+                self._charno = _current_span.end_charno - distance
                 return
 
-            distance -= _current_span_capacity
+            distance -= _current_span.length
 
-            for span_index in range(self._span_index - 1, -1, -1):
-                # Invariant:
-                # distance > 0 here
+    def advance_forward(self, distance: int) -> None:
+        """Move the cursor forward by the given number of logical character positions.
 
-                _current_span = self._rope.get_span(span_index)
+        This method traverses spans incrementally, making it optimal for small
+        forward steps (typically ≤5) in linear scanning.
 
-                if distance <= _current_span.length:
-                    self._span_index = span_index
-                    self._charno = _current_span.end_charno - distance
-                    return
+        Args:
+            distance: Number of characters to move forward. Must be non-negative.
+                Zero has no effect.
 
-                distance -= _current_span.length
-        else:
-            if self.logical_offset + distance >= len(self._rope):
-                raise IndexError(
-                    f"Cannot advance {delta} from logical offset {self.logical_offset}"
-                )
+        Raises:
+            ValueError: If `distance` is negative.
+            IndexError: If the cursor would move past the end of the rope
+                (i.e., `self.logical_offset + distance >= len(self._rope)`).
 
-            _current_span = self._rope.get_span(self._span_index)
+        Note:
+            Equivalent to `advance(distance)` but enforces non-negative distance.
+        """
 
-            # Maximum distance we can move forward without leaving the current span
-            _current_span_capacity = (_current_span.end_charno - 1) - self._charno
+        if distance < 0:
+            raise ValueError(
+                f"advance_forward distance must be non-negative, got {distance}"
+            )
 
-            if distance <= _current_span_capacity:
-                self._charno += distance
+        if distance == 0:
+            return
+
+        if self.logical_offset + distance >= len(self._rope):
+            raise IndexError(
+                f"Cannot move forward {distance} from logical offset {self.logical_offset} "
+                f"(rope length {len(self._rope)})"
+            )
+
+        _current_span = self._rope.get_span(self._span_index)
+
+        # Maximum distance we can move forward without leaving the current span
+        _current_span_capacity = (_current_span.end_charno - 1) - self._charno
+
+        if distance <= _current_span_capacity:
+            self._charno += distance
+            return
+
+        distance -= _current_span_capacity
+
+        for span_index in range(self._span_index + 1, self._rope.span_count):
+            # Invariant:
+            # distance > 0 here
+
+            _current_span = self._rope.get_span(span_index)
+
+            if distance <= _current_span.length:
+                self._span_index = span_index
+                self._charno = _current_span.start_charno + (distance - 1)
                 return
 
-            distance -= _current_span_capacity
-
-            for span_index in range(self._span_index + 1, self._rope.span_count):
-                # Invariant:
-                # distance > 0 here
-
-                _current_span = self._rope.get_span(span_index)
-
-                if distance <= _current_span.length:
-                    self._span_index = span_index
-                    self._charno = _current_span.start_charno + (distance - 1)
-                    return
-
-                distance -= _current_span.length
+            distance -= _current_span.length
