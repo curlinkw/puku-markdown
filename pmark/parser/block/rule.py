@@ -8,3 +8,4 @@ class BlockParserRule(Enum):
     THEMATIC_BREAK = auto()
     SETEXT_HEADING = auto()
     BLOCKQUOTE = auto()
+    LINK_REFERENCE_DEFINITION = auto()

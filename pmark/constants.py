@@ -51,6 +51,11 @@ TAB_CHARACTER: Final[str] = "\t"
 The tab character '\\t' (Unicode U+0009, CHARACTER TABULATION).
 """
 
+LEFT_SQUARE_BRACKET: Final[str] = "["
+"""
+The left square bracket character '[' (Unicode U+005B, LEFT SQUARE BRACKET).
+"""
+
 UNICODE_REPLACEMENT_CHARACTER: Final[str] = "\ufffd"
 
 BACKTICK_CHARACTER: Final[str] = "`"

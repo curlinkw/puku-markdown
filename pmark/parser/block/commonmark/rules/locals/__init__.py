@@ -3,5 +3,13 @@ from pmark.parser.block.commonmark.rules.locals.setext_heading import (
     SetextHeadingLocals,
 )
 from pmark.parser.block.commonmark.rules.locals.blockquote import BlockquoteLocals
+from pmark.parser.block.commonmark.rules.locals.link_reference_definition import (
+    LinkReferenceDefinitionLocals,
+)
 
-__all__ = ["ParagraphLocals", "SetextHeadingLocals", "BlockquoteLocals"]
+__all__ = [
+    "ParagraphLocals",
+    "SetextHeadingLocals",
+    "BlockquoteLocals",
+    "LinkReferenceDefinitionLocals",
+]
