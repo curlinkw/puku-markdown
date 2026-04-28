@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from pmark.parser.block.rule import BlockParserRule
 from pmark.elements.block import BlockElement
@@ -33,7 +33,7 @@ class BlockParserFrameActuals:
     interprets its content as *inherited attributes*.
     """
 
-    parent_production: BlockParserRule | None = field(default=None)  # parentType
+    parent_production: BlockParserRule | None  # parentType
     """
     The production that directly encloses this rule in the parsing hierarchy.
 
@@ -42,7 +42,7 @@ class BlockParserFrameActuals:
     initiated the current frame.
     """
 
-    parent_block: BlockElement | None = field(default=None)  # block_element.parent
+    parent_block: BlockElement | None  # block_element.parent
     """
     The block element that encloses the block currently being parsed.
 
@@ -51,11 +51,15 @@ class BlockParserFrameActuals:
     `parent_production` which tracks the parser rule hierarchy.
     """
 
-    paragraph_line_limit: int | None = field(default=None)
+    continuation_line_limit: int | None
     """
-    Exclusive line index that limits paragraph continuation.
+    Exclusive upper bound (line index) for scanning continuation lines in the current block.
 
-    If `None`, defaults to `state.line_count`. Id est, parser must parse until end of block.
+    When set (e.g., for a paragraph or reference rules), the parser will not consider lines at or beyond this index
+    as part of the block's continuation, even if more lines exist in the source.
+
+    If `None` (default), the limit defaults to the total number of lines in the document (`state.line_count`),
+    allowing continuation until the end of the block or file.
     """
 
     def try_attach_parent(self, block: BlockElement) -> bool:

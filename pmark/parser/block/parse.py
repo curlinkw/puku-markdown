@@ -239,9 +239,13 @@ def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChai
             line_span=LineSpan(start_lineno=0, end_lineno=state.line_count),
             rule_chain=initial_rule_chain,
             causal_command=BlockParserCommand(
-                kind=BlockParserCommandKind.INITIALIZE_ROOT_FRAME
+                kind=BlockParserCommandKind.INITIALIZE_ROOT_FRAME,
+                child_frame_spec=None,
+                origin_rule_context=None,
             ),
-            actuals=BlockParserFrameActuals(),
+            actuals=BlockParserFrameActuals(
+                parent_production=None, parent_block=None, continuation_line_limit=None
+            ),
         )
     ]
 

@@ -29,8 +29,8 @@ def paragraph_rule(
                 current_lineno=context.line_span.start_lineno + 1,
                 end_lineno=(
                     state.line_count
-                    if inherited_attributes.paragraph_line_limit is None
-                    else inherited_attributes.paragraph_line_limit
+                    if inherited_attributes.continuation_line_limit is None
+                    else inherited_attributes.continuation_line_limit
                 ),
             ),
         )
@@ -70,7 +70,9 @@ def paragraph_rule(
                 ),
                 rule_chain=BlockParserRuleChain.PARAGRAPH_TERMINATION,
                 actuals=BlockParserFrameActuals(
-                    parent_production=context.production, parent_block=None
+                    parent_production=context.production,
+                    parent_block=None,
+                    continuation_line_limit=inherited_attributes.continuation_line_limit,
                 ),
             ),
             origin_rule_context=context,

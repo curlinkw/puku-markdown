@@ -177,7 +177,7 @@ def blockquote_rule(
         pass
     elif context.lookahead_matched:
         local_attrs.is_terminated = True
-        local_attrs.paragraph_line_limit = local_attrs.current_lineno
+        local_attrs.continuation_line_limit = local_attrs.current_lineno
 
         if state.current_block_indent_width > 0:
             current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
@@ -228,7 +228,9 @@ def blockquote_rule(
                 ),
                 rule_chain=BlockParserRuleChain.BLOCKQUOTE_TERMINATION,
                 actuals=BlockParserFrameActuals(
-                    parent_production=BlockParserRule.BLOCKQUOTE, parent_block=None
+                    parent_production=BlockParserRule.BLOCKQUOTE,
+                    parent_block=None,
+                    continuation_line_limit=inherited_attributes.continuation_line_limit,
                 ),
             ),
             origin_rule_context=context,
@@ -256,7 +258,7 @@ def blockquote_rule(
                 actuals=BlockParserFrameActuals(
                     parent_production=BlockParserRule.BLOCKQUOTE,
                     parent_block=local_attrs.block,
-                    paragraph_line_limit=local_attrs.paragraph_line_limit,
+                    continuation_line_limit=local_attrs.continuation_line_limit,
                 ),
             ),
             origin_rule_context=context,

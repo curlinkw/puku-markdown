@@ -7,7 +7,7 @@ from pmark.line_span import LineSpan
 from pmark.elements import Document
 from pmark.pattern_metrics import commonmark_char_width
 from pmark.pattern_predicates import is_space_or_tab
-from pmark.constants import INDENTED_CODE_BLOCK_MIN_INDENT
+from pmark.constants import INDENTED_CODE_BLOCK_MIN_INDENT, LINE_FEED_CHARACTER
 
 
 @dataclass(slots=True)
@@ -78,7 +78,7 @@ class BlockParserState:
 
                 if (
                     is_last_character := (position + 1 >= source_length)
-                ) or character == "\n":
+                ) or character == LINE_FEED_CHARACTER:
                     line_descriptors_editor.append(
                         LineDescriptor(
                             line_start_charno=current_line_start_charno,
@@ -726,3 +726,25 @@ class BlockParserState:
                 inner_colno=0,
             ),
         )
+
+    def get_line_content(self, lineno: int, include_end: bool = False) -> str:
+        """
+        Returns the source text of a specified line.
+
+        The line is extracted using the line descriptor's
+        `current_content_start_charno` (actual content start, after indentation)
+        and `line_end_charno` (position of the newline or end of line).
+
+        Args:
+            lineno: Zero-based line index.
+            include_end: If `True`, includes the trailing newline character
+                        (if present) in the returned string.
+
+        Returns:
+            The line content as a substring of the source.
+        """
+        line_descriptor = self.line_descriptors[lineno]
+        return self.source[
+            line_descriptor.current_content_start_charno : line_descriptor.line_end_charno
+            + (1 if include_end else 0)
+        ]

@@ -11,7 +11,7 @@ class BlockquoteLocals:
     line_descriptors_editor: TransactionalEditor[LineDescriptor]
     prev_marked_line_was_empty: bool = False
     is_terminated: bool = False
-    paragraph_line_limit: int | None = None
+    continuation_line_limit: int | None = None
     current_block_indent_width: int | None = None
     nested_parse_completed: bool = False
     block: Blockquote | None = None

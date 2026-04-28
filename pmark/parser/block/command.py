@@ -129,14 +129,14 @@ class BlockParserCommand:
     The specific action the parser should perform. See `BlockParserCommandKind` for details.
     """
 
-    child_frame_spec: BlockParserFrameSpec | None = None
+    child_frame_spec: BlockParserFrameSpec | None
     """
     Specification for creating a child frame, used by command kinds that initiate
     nested parsing contexts (`PARSE_NESTED` and `LOOKAHEAD_ANY_RULE_MATCHES`).
     For command kinds that do not create a child frame, this field must be `None`.
     """
 
-    origin_rule_context: BlockParserRuleContext | None = None
+    origin_rule_context: BlockParserRuleContext | None
     """
     The context of the rule that produced this command.
 
@@ -153,14 +153,22 @@ class BlockParserCommand:
         """
         Return a command whose kind is `COMMIT_SUCCESS`.
         """
-        return cls(kind=BlockParserCommandKind.COMMIT_SUCCESS)
+        return cls(
+            kind=BlockParserCommandKind.COMMIT_SUCCESS,
+            child_frame_spec=None,
+            origin_rule_context=None,
+        )
 
     @classmethod
     def with_commit_rejection_kind(cls) -> Self:
         """
         Return a command whose kind is `COMMIT_REJECTION`.
         """
-        return cls(kind=BlockParserCommandKind.COMMIT_REJECTION)
+        return cls(
+            kind=BlockParserCommandKind.COMMIT_REJECTION,
+            child_frame_spec=None,
+            origin_rule_context=None,
+        )
 
     def expect_child_frame_spec(self) -> BlockParserFrameSpec:
         """

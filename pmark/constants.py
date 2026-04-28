@@ -51,9 +51,19 @@ TAB_CHARACTER: Final[str] = "\t"
 The tab character '\\t' (Unicode U+0009, CHARACTER TABULATION).
 """
 
-LEFT_SQUARE_BRACKET: Final[str] = "["
+LEFT_SQUARE_BRACKET_CHARACTER: Final[str] = "["
 """
 The left square bracket character '[' (Unicode U+005B, LEFT SQUARE BRACKET).
+"""
+
+RIGHT_SQUARE_BRACKET_CHARACTER: Final[str] = "]"
+"""
+The right square bracket character ']' (Unicode U+005D, RIGHT SQUARE BRACKET).
+"""
+
+LINE_FEED_CHARACTER: Final[str] = "\n"
+"""
+Line feed (LF), the '\n' character.
 """
 
 UNICODE_REPLACEMENT_CHARACTER: Final[str] = "\ufffd"

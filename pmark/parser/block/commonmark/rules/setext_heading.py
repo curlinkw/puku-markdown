@@ -151,7 +151,9 @@ def setext_heading_rule(
                 ),
                 rule_chain=BlockParserRuleChain.SETEXT_HEADING_TERMINATION,
                 actuals=BlockParserFrameActuals(
-                    parent_production=context.production, parent_block=None
+                    parent_production=context.production,
+                    parent_block=None,
+                    continuation_line_limit=inherited_attributes.continuation_line_limit,
                 ),
             ),
             origin_rule_context=context,

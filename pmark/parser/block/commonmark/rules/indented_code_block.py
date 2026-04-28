@@ -4,7 +4,7 @@ from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.elements.block.commonmark.indented_code_block import IdentedCodeBlock
 from pmark.line_span import LineSpan
-from pmark.constants import INDENTED_CODE_BLOCK_MIN_INDENT
+from pmark.constants import INDENTED_CODE_BLOCK_MIN_INDENT, LINE_FEED_CHARACTER
 
 
 def indented_code_block_rule(
@@ -35,6 +35,9 @@ def indented_code_block_rule(
 
     if not state.meets_indented_code_block_indent(context.line_span.start_lineno):
         return BlockParserCommand.with_commit_rejection_kind()
+
+    if context.is_speculative_mode:
+        return BlockParserCommand.with_commit_success_kind()
 
     last_lineno = current_lineno = context.line_span.start_lineno + 1
 
@@ -68,7 +71,7 @@ def indented_code_block_rule(
             + state.current_block_indent_width,
             keep_trailing_newline=False,
         )
-        + "\n",
+        + LINE_FEED_CHARACTER,
     )
 
     if not inherited_attributes.try_attach_parent(block):

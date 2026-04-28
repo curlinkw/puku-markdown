@@ -1,6 +1,7 @@
 from pmark.re_patterns import LINE_ENDINGS_RE
 from pmark.constants import NULL_CHARACTER, UNICODE_REPLACEMENT_CHARACTER
 from pmark.parser.block.state import BlockParserState
+from pmark.constants import LINE_FEED_CHARACTER
 
 
 def parse(
@@ -19,6 +20,6 @@ def parse(
     # Normalize all line endings (\r\n, \r, \n) to \n for parsing simplicity
     # CommonMark treats all line ending styles as equivalent, so this transformation
     # is spec-compliant and simplifies the parser by only needing to handle \n.
-    source = LINE_ENDINGS_RE.sub("\n", source)
+    source = LINE_ENDINGS_RE.sub(LINE_FEED_CHARACTER, source)
 
     return None
