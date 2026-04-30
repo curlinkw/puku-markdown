@@ -1,6 +1,6 @@
 import re
 
-from pmark.common.constants import HTML_BLOCK_NAMES
+from pmark._utils.constants import HTML_BLOCK_NAMES
 
 
 LINE_ENDINGS_RE = re.compile(r"\r\n?|\n")

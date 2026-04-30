@@ -76,6 +76,16 @@ COLON_CHARACTER: Final[str] = ":"
 Colon (:), used in reference definitions after the label.
 """
 
+LEFT_PARENTHESIS_CHARACTER: Final[str] = "("
+"""
+Left parenthesis '(' (U+0028).
+"""
+
+RIGHT_PARENTHESIS_CHARACTER: Final[str] = ")"
+"""
+Right parenthesis ')' (U+0029).
+"""
+
 UNICODE_REPLACEMENT_CHARACTER: Final[str] = "\ufffd"
 
 BACKTICK_CHARACTER: Final[str] = "`"
@@ -236,4 +246,16 @@ The equals sign '=' (Unicode U+003D).
 In Markdown, this character is used in Setext headings (level-1) and as a
 delimiter for fenced code blocks (with backticks). It also appears in
 HTML attributes and link definitions.
+"""
+
+MAX_LINK_DESTINATION_PARENTHESIS_DEPTH: Final[int] = 32
+"""
+Maximum allowed nesting depth of parentheses inside a bare link destination
+(i.e., when not enclosed in `<` `>`). Exceeding this limit invalidates the
+link destination and stops scanning.
+
+This limit is a safety measure against pathological input; it is not mandated
+by the CommonMark specification, which only requires balanced parentheses.
+The value 32 is high enough for all practical URLs yet low enough to prevent
+excessive CPU consumption.
 """

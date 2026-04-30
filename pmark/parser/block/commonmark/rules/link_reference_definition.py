@@ -10,8 +10,12 @@ from pmark.parser.block.commonmark.rules.locals.link_reference_definition import
     _LinkReferenceDefinitionStep,
 )
 from pmark.line_span import LineSpan
-from pmark.common.predicates import is_space_or_tab
-from pmark.common.constants import (
+from pmark._utils.scanners.link_destination import (
+    scan_link_destination,
+    _LinkDestinationScanResult,
+)
+from pmark._utils.predicates import is_space_or_tab
+from pmark._utils.constants import (
     LEFT_SQUARE_BRACKET_CHARACTER,
     RIGHT_SQUARE_BRACKET_CHARACTER,
     LINE_FEED_CHARACTER,

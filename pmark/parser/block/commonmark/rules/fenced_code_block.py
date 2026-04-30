@@ -4,7 +4,7 @@ from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.elements.block.commonmark.fenced_code_block import FencedCodeBlock
 from pmark.line_span import LineSpan
-from pmark.common.constants import (
+from pmark._utils.constants import (
     FENCED_CODE_BLOCK_MARKERS,
     FENCED_CODE_BLOCK_MIN_MARKER_COUNT,
     BACKTICK_CHARACTER,

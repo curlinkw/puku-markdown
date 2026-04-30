@@ -3,8 +3,8 @@ from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.elements.block.commonmark.thematic_break import ThematicBreak
-from pmark.common.predicates import is_space_or_tab
-from pmark.common.constants import (
+from pmark._utils.predicates import is_space_or_tab
+from pmark._utils.constants import (
     THEMATIC_BREAK_MARKERS,
     THEMATIC_BREAK_MIN_MARKER_COUNT,
 )

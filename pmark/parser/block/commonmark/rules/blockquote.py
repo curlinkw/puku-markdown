@@ -13,9 +13,9 @@ from pmark.elements.block.commonmark.blockquote import Blockquote
 from pmark.persistent_list.transactional_editor import TransactionalEditor
 from pmark.column_resolution import ColnoWithResolution, ColnoResolution
 from pmark.line_span import LineSpan
-from pmark.common.metrics import commonmark_char_width
-from pmark.common.predicates import is_space_or_tab
-from pmark.common.constants import GREATER_THAN_CHARACTER
+from pmark._utils.metrics import commonmark_char_width
+from pmark._utils.predicates import is_space_or_tab
+from pmark._utils.constants import GREATER_THAN_CHARACTER
 
 
 def _try_consume_blockquote_prefix(

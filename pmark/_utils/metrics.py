@@ -1,4 +1,4 @@
-from pmark.common.constants import COMMONMARK_TAB_STOP, TAB_CHARACTER
+from pmark._utils.constants import COMMONMARK_TAB_STOP, TAB_CHARACTER
 
 
 def commonmark_char_width(start_colno: int, character: str) -> int:

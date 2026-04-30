@@ -1,6 +1,6 @@
 from typing import NamedTuple, Self
 
-from pmark.common.metrics import commonmark_char_width
+from pmark._utils.metrics import commonmark_char_width
 
 
 class ColnoResolution(NamedTuple):
