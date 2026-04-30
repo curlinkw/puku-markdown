@@ -14,6 +14,7 @@ class LinkReferenceDefinitionLocals:
     current_charno: int = 1
     step: _LinkReferenceDefinitionStep = _LinkReferenceDefinitionStep.SCAN_LABEL
     is_current_line_terminator: bool | None = None
+    label_end: int | None = None
 
     def consume_line_and_advance(self, line_content: str) -> None:
         """

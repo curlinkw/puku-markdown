@@ -11,7 +11,7 @@ from pmark.parser.block.commonmark.rules.locals.setext_heading import (
 )
 from pmark.elements.block.commonmark.setext_heading import SetextHeading
 from pmark.line_span import LineSpan
-from pmark.constants import SETEXT_HEADING_MARKERS, EQUALS_SIGN_CHARACTER
+from pmark.common.constants import SETEXT_HEADING_MARKERS, EQUALS_SIGN_CHARACTER
 
 
 def _parse_setext_underline(

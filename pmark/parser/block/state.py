@@ -5,9 +5,9 @@ from pmark.persistent_list import PersistentList, Transient
 from pmark.column_resolution import ColnoWithResolution, ColnoResolution
 from pmark.line_span import LineSpan
 from pmark.elements import Document
-from pmark.pattern_metrics import commonmark_char_width
-from pmark.pattern_predicates import is_space_or_tab
-from pmark.constants import INDENTED_CODE_BLOCK_MIN_INDENT, LINE_FEED_CHARACTER
+from pmark.common.metrics import commonmark_char_width
+from pmark.common.predicates import is_space_or_tab
+from pmark.common.constants import INDENTED_CODE_BLOCK_MIN_INDENT, LINE_FEED_CHARACTER
 
 
 @dataclass(slots=True)

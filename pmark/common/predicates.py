@@ -1,4 +1,4 @@
-from pmark.constants import TAB_CHARACTER, SPACE_CHARACTER
+from pmark.common.constants import TAB_CHARACTER, SPACE_CHARACTER
 
 
 def is_space_or_tab(character: str) -> bool:

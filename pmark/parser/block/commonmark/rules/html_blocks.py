@@ -6,8 +6,8 @@ from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.elements.block.commonmark.html_block import HtmlBlock, HtmlBlockKind
 from pmark.line_span import LineSpan
-from pmark.constants import LESS_THAN_CHARACTER
-from pmark.re_patterns import (
+from pmark.common.constants import LESS_THAN_CHARACTER
+from pmark.common.re_patterns import (
     HTML_RAW_TEXT_TAG_OPEN_RE,
     HTML_RAW_TEXT_TAG_CLOSE_RE,
     HTML_COMMENT_OPEN_RE,

@@ -1,7 +1,7 @@
-from pmark.re_patterns import LINE_ENDINGS_RE
-from pmark.constants import NULL_CHARACTER, UNICODE_REPLACEMENT_CHARACTER
+from pmark.common.patterns import LINE_ENDINGS_RE
+from pmark.common.constants import NULL_CHARACTER, UNICODE_REPLACEMENT_CHARACTER
 from pmark.parser.block.state import BlockParserState
-from pmark.constants import LINE_FEED_CHARACTER
+from pmark.common.constants import LINE_FEED_CHARACTER
 
 
 def parse(

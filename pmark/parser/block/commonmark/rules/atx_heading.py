@@ -4,8 +4,8 @@ from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.parser.block.line_descriptor import LineDescriptor
 from pmark.elements.block.commonmark.atx_heading import AtxHeading
-from pmark.pattern_predicates import is_space_or_tab
-from pmark.constants import HASH_CHARACTER, ATX_HEADING_MAX_LEVEL
+from pmark.common.predicates import is_space_or_tab
+from pmark.common.constants import HASH_CHARACTER, ATX_HEADING_MAX_LEVEL
 
 
 def _trailing_markup_start(

@@ -66,6 +66,16 @@ LINE_FEED_CHARACTER: Final[str] = "\n"
 Line feed (LF), the '\n' character.
 """
 
+BACKSLASH_CHARACTER: Final[str] = "\\"
+"""
+Backslash, the escape character.
+"""
+
+COLON_CHARACTER: Final[str] = ":"
+"""
+Colon (:), used in reference definitions after the label.
+"""
+
 UNICODE_REPLACEMENT_CHARACTER: Final[str] = "\ufffd"
 
 BACKTICK_CHARACTER: Final[str] = "`"

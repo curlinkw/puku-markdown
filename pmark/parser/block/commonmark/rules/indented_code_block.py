@@ -4,7 +4,7 @@ from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.elements.block.commonmark.indented_code_block import IdentedCodeBlock
 from pmark.line_span import LineSpan
-from pmark.constants import INDENTED_CODE_BLOCK_MIN_INDENT, LINE_FEED_CHARACTER
+from pmark.common.constants import INDENTED_CODE_BLOCK_MIN_INDENT, LINE_FEED_CHARACTER
 
 
 def indented_code_block_rule(
