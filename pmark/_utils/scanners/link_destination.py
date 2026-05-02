@@ -13,14 +13,14 @@ from pmark._utils.constants import (
 from pmark._utils.predicates import is_ascii_control
 
 
-class _LinkDestinationScanResult(NamedTuple):
+class LinkDestinationScanResult(NamedTuple):
     destination: str
     next_charno: int
 
 
 def scan_link_destination(
     source: str, start_charno: int, end_charno: int
-) -> _LinkDestinationScanResult | None:
+) -> LinkDestinationScanResult | None:
     if not (start_charno < end_charno <= len(source)):
         return None
 
@@ -39,7 +39,7 @@ def scan_link_destination(
                 return None
 
             if current_char == GREATER_THAN_CHARACTER:
-                return _LinkDestinationScanResult(
+                return LinkDestinationScanResult(
                     destination=source[start_charno + 1 : current_charno],
                     next_charno=current_charno + 1,
                 )
@@ -90,6 +90,6 @@ def scan_link_destination(
     if parenthesis_depth != 0:
         return None
 
-    return _LinkDestinationScanResult(
+    return LinkDestinationScanResult(
         destination=source[start_charno:current_charno], next_charno=current_charno
     )

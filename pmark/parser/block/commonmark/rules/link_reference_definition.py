@@ -10,9 +10,10 @@ from pmark.parser.block.commonmark.rules.locals.link_reference_definition import
     _LinkReferenceDefinitionStep,
 )
 from pmark.line_span import LineSpan
-from pmark._utils.scanners.link_destination import (
+from pmark._utils.scanners import (
     scan_link_destination,
-    _LinkDestinationScanResult,
+    scan_link_title,
+    LinkTitleScannerStatus,
 )
 from pmark._utils.predicates import is_space_or_tab
 from pmark._utils.constants import (
@@ -202,7 +203,40 @@ def _scan_title(
     context: BlockParserRuleContext,
     local_attrs: LinkReferenceDefinitionLocals,
 ):
-    pass
+    link_title_scanner_state = scan_link_title(
+        source=local_attrs.content_buffer,
+        start_charno=local_attrs.current_charno,
+        end_charno=len(local_attrs.content_buffer),
+    )
+
+    while link_title_scanner_state.status is LinkTitleScannerStatus.INCOMPLETE:
+        if (
+            command := _assess_is_current_line_terminator(
+                state=state,
+                inherited_attributes=inherited_attributes,
+                context=context,
+                local_attrs=local_attrs,
+            )
+        ) is not None:
+            return command
+
+        if local_attrs.expect_is_current_line_terminator():
+            break
+
+        local_attrs.current_charno = len(local_attrs.content_buffer)
+
+        local_attrs.consume_line_and_advance(
+            line_content=state.get_line_content(
+                lineno=local_attrs.current_lineno, include_end=True
+            )
+        )
+
+        link_title_scanner_state = scan_link_title(
+            source=local_attrs.content_buffer,
+            start_charno=local_attrs.current_charno,
+            end_charno=len(local_attrs.content_buffer),
+            state=link_title_scanner_state,
+        )
 
 
 def _dispatch_step(

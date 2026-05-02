@@ -10,15 +10,15 @@ from pmark._utils.constants import (
 )
 
 
-class _LinkTitleScannerStatus(Enum):
+class LinkTitleScannerStatus(Enum):
     SUCCESS = auto()
     INCOMPLETE = auto()
     REJECTION = auto()
 
 
 @dataclass(slots=True)
-class _LinkTitleScannerState:
-    status: _LinkTitleScannerStatus
+class LinkTitleScannerState:
+    status: LinkTitleScannerStatus
     next_charno: int | None = field(default=None)
     title: str | None = field(default=None)
     closing_marker: str | None = field(default=None)
@@ -39,10 +39,10 @@ def scan_link_title(
     source: str,
     start_charno: int,
     end_charno: int,
-    state: _LinkTitleScannerState | None = None,
-) -> _LinkTitleScannerState:
+    state: LinkTitleScannerState | None = None,
+) -> LinkTitleScannerState:
     if not (start_charno < end_charno <= len(source)):
-        return _LinkTitleScannerState(status=_LinkTitleScannerStatus.REJECTION)
+        return LinkTitleScannerState(status=LinkTitleScannerStatus.REJECTION)
 
     current_charno = start_charno
 
@@ -54,13 +54,13 @@ def scan_link_title(
             SINGLE_QUOTE_CHARACTER,
             DOUBLE_QUOTE_CHARACTER,
         ):
-            return _LinkTitleScannerState(status=_LinkTitleScannerStatus.REJECTION)
+            return LinkTitleScannerState(status=LinkTitleScannerStatus.REJECTION)
 
         start_charno += 1
         current_charno += 1
 
-        state = _LinkTitleScannerState(
-            status=_LinkTitleScannerStatus.REJECTION,
+        state = LinkTitleScannerState(
+            status=LinkTitleScannerStatus.REJECTION,
             closing_marker=(
                 RIGHT_PARENTHESIS_CHARACTER
                 if marker == LEFT_PARENTHESIS_CHARACTER
@@ -79,7 +79,7 @@ def scan_link_title(
                 state.title = ""
 
             state.title += source[start_charno:current_charno]
-            state.status = _LinkTitleScannerStatus.SUCCESS
+            state.status = LinkTitleScannerStatus.SUCCESS
             return state
 
         if current_char in (LEFT_PARENTHESIS_CHARACTER, RIGHT_PARENTHESIS_CHARACTER):
@@ -90,7 +90,7 @@ def scan_link_title(
 
         current_charno += 1
 
-    state.status = _LinkTitleScannerStatus.INCOMPLETE
+    state.status = LinkTitleScannerStatus.INCOMPLETE
 
     if state.title is None:
         state.title = ""

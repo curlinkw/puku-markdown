@@ -1,4 +1,4 @@
-from pmark._utils.patterns import LINE_ENDINGS_RE
+from pmark._utils.re_patterns import LINE_ENDINGS_RE
 from pmark._utils.constants import NULL_CHARACTER, UNICODE_REPLACEMENT_CHARACTER
 from pmark.parser.block.state import BlockParserState
 from pmark._utils.constants import LINE_FEED_CHARACTER
