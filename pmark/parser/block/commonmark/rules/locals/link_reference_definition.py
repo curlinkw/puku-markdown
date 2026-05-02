@@ -15,6 +15,7 @@ class LinkReferenceDefinitionLocals:
     step: _LinkReferenceDefinitionStep = _LinkReferenceDefinitionStep.SCAN_LABEL
     is_current_line_terminator: bool | None = None
     label_end: int | None = None
+    link_destination: str | None = None
 
     def consume_line_and_advance(self, line_content: str) -> None:
         """

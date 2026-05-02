@@ -179,11 +179,29 @@ def _skip_whitespace_with_continuation(
 
 
 def _scan_destination(
+    local_attrs: LinkReferenceDefinitionLocals,
+) -> BlockParserCommand | None:
+    link_destination_scan_result = scan_link_destination(
+        source=local_attrs.content_buffer,
+        start_charno=local_attrs.current_charno,
+        end_charno=len(local_attrs.content_buffer),
+    )
+
+    if link_destination_scan_result is None:
+        return BlockParserCommand.with_commit_rejection_kind()
+
+    local_attrs.link_destination = link_destination_scan_result.destination
+    local_attrs.current_charno = link_destination_scan_result.next_charno
+
+    return None
+
+
+def _scan_title(
     state: BlockParserState,
     inherited_attributes: BlockParserFrameActuals,
     context: BlockParserRuleContext,
     local_attrs: LinkReferenceDefinitionLocals,
-) -> BlockParserCommand | None:
+):
     pass
 
 

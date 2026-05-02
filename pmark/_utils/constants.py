@@ -259,3 +259,13 @@ by the CommonMark specification, which only requires balanced parentheses.
 The value 32 is high enough for all practical URLs yet low enough to prevent
 excessive CPU consumption.
 """
+
+DOUBLE_QUOTE_CHARACTER: Final[str] = '"'
+"""
+Double quotation mark " (U+0022).
+"""
+
+SINGLE_QUOTE_CHARACTER: Final[str] = "'"
+"""
+Apostrophe / single quote ' (U+0027).
+"""
