@@ -1,12 +1,18 @@
-from pmark._utils.re_patterns import LINE_ENDINGS_RE
-from pmark._utils.constants import NULL_CHARACTER, UNICODE_REPLACEMENT_CHARACTER
+from pmark.parser.block.rule_chain import BlockParserRuleChain
 from pmark.parser.block.state import BlockParserState
-from pmark._utils.constants import LINE_FEED_CHARACTER
+from pmark.parser.block.parse import block_parse
+from pmark.elements.document import Document
+from pmark._utils.re_patterns import LINE_ENDINGS_RE
+from pmark._utils.constants import (
+    NULL_CHARACTER,
+    UNICODE_REPLACEMENT_CHARACTER,
+    LINE_FEED_CHARACTER,
+)
 
 
 def parse(
     source: str,
-) -> None:
+) -> Document:
     """
     # TODO
     """
@@ -22,4 +28,10 @@ def parse(
     # is spec-compliant and simplifies the parser by only needing to handle \n.
     source = LINE_ENDINGS_RE.sub(LINE_FEED_CHARACTER, source)
 
-    return None
+    block_state = BlockParserState(source=source, target_document=Document())
+    block_parse(
+        state=block_state,
+        initial_rule_chain=BlockParserRuleChain.FULL_COMMONMARK_RULE_CHAIN,
+    )
+
+    return block_state.target_document
