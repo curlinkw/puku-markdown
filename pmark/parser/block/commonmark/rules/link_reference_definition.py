@@ -194,6 +194,9 @@ def _scan_destination(
     local_attrs.link_destination = link_destination_scan_result.destination
     local_attrs.current_charno = link_destination_scan_result.next_charno
 
+    local_attrs.link_destination_end_charno = local_attrs.current_charno
+    local_attrs.link_destination_end_lineno = local_attrs.current_lineno
+
     return None
 
 
@@ -202,14 +205,24 @@ def _scan_title(
     inherited_attributes: BlockParserFrameActuals,
     context: BlockParserRuleContext,
     local_attrs: LinkReferenceDefinitionLocals,
-):
-    link_title_scanner_state = scan_link_title(
-        source=local_attrs.content_buffer,
-        start_charno=local_attrs.current_charno,
-        end_charno=len(local_attrs.content_buffer),
-    )
+) -> BlockParserCommand | None:
+    # Invariant:
+    # We do handle resuming correctly here
+    # Cause we do nothing in _assess_is_current_line_terminator
+    # If local_attrs.is_current_line_terminator is not None
+    # And, also, cause
+    # We do not call _assess_is_current_line_terminator after cycle
 
-    while link_title_scanner_state.status is LinkTitleScannerStatus.INCOMPLETE:
+    if local_attrs.link_title_scanner_state is None:
+        local_attrs.link_title_scanner_state = scan_link_title(
+            source=local_attrs.content_buffer,
+            start_charno=local_attrs.current_charno,
+            end_charno=len(local_attrs.content_buffer),
+        )
+
+    while (
+        local_attrs.link_title_scanner_state.status is LinkTitleScannerStatus.INCOMPLETE
+    ):
         if (
             command := _assess_is_current_line_terminator(
                 state=state,
@@ -231,12 +244,60 @@ def _scan_title(
             )
         )
 
-        link_title_scanner_state = scan_link_title(
+        local_attrs.link_title_scanner_state = scan_link_title(
             source=local_attrs.content_buffer,
             start_charno=local_attrs.current_charno,
             end_charno=len(local_attrs.content_buffer),
-            state=link_title_scanner_state,
+            state=local_attrs.link_title_scanner_state,
         )
+
+    if (
+        local_attrs.expect_link_destination_end_charno()
+        < local_attrs.current_charno
+        < len(local_attrs.content_buffer)
+    ) and (
+        local_attrs.link_title_scanner_state.status is LinkTitleScannerStatus.SUCCESS
+    ):
+        local_attrs.link_title = local_attrs.link_title_scanner_state.title
+        local_attrs.current_charno = (
+            local_attrs.link_title_scanner_state.expect_next_charno()
+        )
+    else:
+        local_attrs.current_charno = local_attrs.expect_link_destination_end_charno()
+        local_attrs.current_lineno = local_attrs.expect_link_destination_end_lineno()
+
+    while local_attrs.current_charno < len(local_attrs.content_buffer):
+        current_char = local_attrs.content_buffer[local_attrs.current_charno]
+
+        if not is_space_or_tab(current_char):
+            break
+
+        local_attrs.current_charno += 1
+
+    if (
+        (local_attrs.current_charno < len(local_attrs.content_buffer))
+        and (
+            local_attrs.content_buffer[local_attrs.current_charno]
+            != LINE_FEED_CHARACTER
+        )
+        and local_attrs.link_title
+    ):
+        local_attrs.link_title = None
+        local_attrs.current_charno = local_attrs.expect_link_destination_end_charno()
+        local_attrs.current_lineno = local_attrs.expect_link_destination_end_lineno()
+
+        while local_attrs.current_charno < len(local_attrs.content_buffer):
+            current_char = local_attrs.content_buffer[local_attrs.current_charno]
+
+            if not is_space_or_tab(current_char):
+                break
+
+            local_attrs.current_charno += 1
+
+    if (local_attrs.current_charno < len(local_attrs.content_buffer)) and (
+        local_attrs.content_buffer[local_attrs.current_charno] != LINE_FEED_CHARACTER
+    ):
+        return BlockParserCommand.with_commit_rejection_kind()
 
 
 def _dispatch_step(

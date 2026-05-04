@@ -34,6 +34,17 @@ class LinkTitleScannerState:
             raise ValueError("Closing marker not set")
         return self.closing_marker
 
+    def expect_next_charno(self) -> int:
+        """
+        Returns the cached next character position.
+
+        Raises:
+            ValueError: If the next character position has not been set.
+        """
+        if self.next_charno is None:
+            raise ValueError("Next character position not set")
+        return self.next_charno
+
 
 def scan_link_title(
     source: str,
