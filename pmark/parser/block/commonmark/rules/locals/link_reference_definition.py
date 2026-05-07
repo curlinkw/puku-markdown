@@ -6,6 +6,10 @@ from pmark._utils.scanners.link_title import LinkTitleScannerState
 
 class _LinkReferenceDefinitionStep(Enum):
     SCAN_LABEL = auto()
+    SKIP_WHITESPACES_AFTER_LABEL = auto()
+    SCAN_DESTINATION = auto()
+    SKIP_WHITESPACES_AFTER_DESTINATION = auto()
+    SCAN_TITLE = auto()
 
 
 @dataclass(slots=True)
