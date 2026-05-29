@@ -48,7 +48,7 @@ class PersistentList(Generic[ItemT]):
     @property
     def has_transient(self) -> bool:
         """`True` if an active `Transient` currently exists for this persistent list."""
-        return self.has_transient
+        return self._has_transient
 
     @property
     def has_active_transaction(self) -> bool:
