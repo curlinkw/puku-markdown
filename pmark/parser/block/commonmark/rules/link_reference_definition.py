@@ -10,6 +10,9 @@ from pmark.parser.block.commonmark.rules.locals.link_reference_definition import
     _LinkReferenceDefinitionStep,
 )
 from pmark.line_span import LineSpan
+from pmark.elements.block.commonmark.link_reference_definition import (
+    LinkReferenceDefinition,
+)
 from pmark._utils.scanners import (
     scan_link_destination,
     scan_link_title,
@@ -133,6 +136,8 @@ def _scan_label(
 
     local_attrs.current_charno = local_attrs.label_end + 2
 
+    local_attrs.advance_step()
+
     return None
 
 
@@ -176,6 +181,8 @@ def _skip_whitespace_with_continuation(
         else:
             break
 
+    local_attrs.advance_step()
+
     return None
 
 
@@ -196,6 +203,8 @@ def _scan_destination(
 
     local_attrs.link_destination_end_charno = local_attrs.current_charno
     local_attrs.link_destination_end_lineno = local_attrs.current_lineno
+
+    local_attrs.advance_step()
 
     return None
 
@@ -299,6 +308,8 @@ def _scan_title(
     ):
         return BlockParserCommand.with_commit_rejection_kind()
 
+    return BlockParserCommand.with_commit_success_kind()
+
 
 def _dispatch_step(
     state: BlockParserState,
@@ -309,6 +320,25 @@ def _dispatch_step(
     match local_attrs.step:
         case _LinkReferenceDefinitionStep.SCAN_LABEL:
             command = _scan_label(
+                state=state,
+                inherited_attributes=inherited_attributes,
+                context=context,
+                local_attrs=local_attrs,
+            )
+        case (
+            _LinkReferenceDefinitionStep.SKIP_WHITESPACES_AFTER_LABEL
+            | _LinkReferenceDefinitionStep.SKIP_WHITESPACES_AFTER_DESTINATION
+        ):
+            command = _skip_whitespace_with_continuation(
+                state=state,
+                inherited_attributes=inherited_attributes,
+                context=context,
+                local_attrs=local_attrs,
+            )
+        case _LinkReferenceDefinitionStep.SCAN_DESTINATION:
+            command = _scan_destination(local_attrs=local_attrs)
+        case _LinkReferenceDefinitionStep.SCAN_TITLE:
+            command = _scan_title(
                 state=state,
                 inherited_attributes=inherited_attributes,
                 context=context,
@@ -383,5 +413,18 @@ def link_reference_definition_rule(
         )
     ) is None:
         pass
+
+    if (command.kind is BlockParserCommandKind.COMMIT_SUCCESS) and (
+        not context.is_speculative_mode
+    ):
+        block = LinkReferenceDefinition(
+            parent=None,
+            label=local_attrs.link_label,
+            href=local_attrs.expect_link_destination(),
+            title=local_attrs.expect_link_title(),
+        )
+
+        if not inherited_attributes.try_attach_parent(block):
+            state.target_document.append_root_block(block)
 
     return command

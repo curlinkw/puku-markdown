@@ -68,3 +68,45 @@ class LinkReferenceDefinitionLocals:
         if self.link_destination_end_lineno is None:
             raise ValueError("Destination end line number not set")
         return self.link_destination_end_lineno
+
+    def advance_step(self) -> None:
+        """Advance to the next step in the link reference definition sequence."""
+        match self.step:
+            case _LinkReferenceDefinitionStep.SCAN_LABEL:
+                self.step = _LinkReferenceDefinitionStep.SKIP_WHITESPACES_AFTER_LABEL
+            case _LinkReferenceDefinitionStep.SKIP_WHITESPACES_AFTER_LABEL:
+                self.step = _LinkReferenceDefinitionStep.SCAN_DESTINATION
+            case _LinkReferenceDefinitionStep.SCAN_DESTINATION:
+                self.step = (
+                    _LinkReferenceDefinitionStep.SKIP_WHITESPACES_AFTER_DESTINATION
+                )
+            case _LinkReferenceDefinitionStep.SKIP_WHITESPACES_AFTER_DESTINATION:
+                self.step = _LinkReferenceDefinitionStep.SCAN_TITLE
+            case _LinkReferenceDefinitionStep.SCAN_TITLE:
+                raise StopIteration("Link reference definition complete")
+
+    @property
+    def link_label(self) -> str:
+        return self.content_buffer[1 : self.label_end]
+
+    def expect_link_destination(self) -> str:
+        """
+        Returns the cached link destination.
+
+        Raises:
+            ValueError: If the link destination has not been set.
+        """
+        if self.link_destination is None:
+            raise ValueError("Link destination not set")
+        return self.link_destination
+
+    def expect_link_title(self) -> str:
+        """
+        Returns the cached link title.
+
+        Raises:
+            ValueError: If the link title has not been set.
+        """
+        if self.link_title is None:
+            raise ValueError("Link title not set")
+        return self.link_title
