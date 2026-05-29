@@ -9,5 +9,6 @@ if TYPE_CHECKING:
 
 
 BlockParserRuleFunc: TypeAlias = Callable[
-    [BlockParserState, BlockParserFrameActuals, BlockParserRuleContext], BlockParserCommand
+    ["BlockParserState", "BlockParserFrameActuals", "BlockParserRuleContext"],
+    "BlockParserCommand",
 ]
