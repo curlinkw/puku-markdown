@@ -99,14 +99,3 @@ class LinkReferenceDefinitionLocals:
         if self.link_destination is None:
             raise ValueError("Link destination not set")
         return self.link_destination
-
-    def expect_link_title(self) -> str:
-        """
-        Returns the cached link title.
-
-        Raises:
-            ValueError: If the link title has not been set.
-        """
-        if self.link_title is None:
-            raise ValueError("Link title not set")
-        return self.link_title

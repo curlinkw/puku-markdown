@@ -421,7 +421,7 @@ def link_reference_definition_rule(
             parent=None,
             label=local_attrs.link_label,
             href=local_attrs.expect_link_destination(),
-            title=local_attrs.expect_link_title(),
+            title=local_attrs.link_title,
         )
 
         if not inherited_attributes.try_attach_parent(block):

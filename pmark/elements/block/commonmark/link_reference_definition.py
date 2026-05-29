@@ -7,4 +7,4 @@ from pmark.elements.block import BlockElement
 class LinkReferenceDefinition(BlockElement):
     label: str
     href: str
-    title: str
+    title: str | None = None
