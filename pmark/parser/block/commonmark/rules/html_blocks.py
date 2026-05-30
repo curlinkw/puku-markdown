@@ -1,4 +1,5 @@
 from re import Pattern
+from typing import Final
 
 from pmark.parser.block.state import BlockParserState
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
@@ -23,6 +24,7 @@ from pmark._utils.re_patterns import (
     HTML_TAG_OPEN_RE,
     HTML_TAG_CLOSE_RE,
 )
+from pmark.parser.block.type_aliases import BlockParserRuleFunc
 
 
 def _find_block_end_lineno(
@@ -254,3 +256,34 @@ def html_tag_rule(
         close_re=HTML_TAG_CLOSE_RE,
         block_kind=HtmlBlockKind.TAG,
     )
+
+
+HTML_BLOCK_RULES: Final[tuple[BlockParserRuleFunc, ...]] = (
+    html_raw_text_tag_rule,
+    html_comment_rule,
+    html_processing_instruction_rule,
+    html_markup_declaration_rule,
+    html_cdata_rule,
+    html_block_level_tag_rule,
+    html_tag_rule,
+)
+"""
+HTML block rule functions in the order defined by CommonMark.
+
+This order determines precedence during block parsing. For example,
+comments (`<!-- -->`) must be recognised before generic block-level
+tags (`<div>`) to avoid misinterpreting comment starts as tag starts.
+
+Rule mapping to `markdown-it-py` `HTML_SEQUENCES`:
+
+0. `html_raw_text_tag_rule` → `<script>`, `<pre>`, `<style>`, `<textarea>`
+1. `html_comment_rule` → `<!-- ... -->`
+2. `html_processing_instruction_rule` → `<? ... ?>`
+3. `html_markup_declaration_rule` → `<!...>` (e.g., DOCTYPE)
+4. `html_cdata_rule` → `<![CDATA[ ... ]]>`
+5. `html_block_level_tag_rule` → block-level HTML tags (e.g., `<div>`)
+6. `html_tag_rule` → any other complete HTML tag on a single line
+
+Note:
+    Do not change this order unless you also update the underlying precedence.
+"""
