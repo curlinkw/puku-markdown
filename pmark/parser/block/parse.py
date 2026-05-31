@@ -66,9 +66,13 @@ def _process_rules_through_next_applicable(
             state,
             current_frame.actuals,
             BlockParserRuleContext(
-                line_span=LineSpan(
-                    start_lineno=state.current_lineno,
-                    end_lineno=current_frame.line_span.end_lineno,
+                line_span=(
+                    current_frame.line_span
+                    if is_speculative_mode
+                    else LineSpan(
+                        start_lineno=state.current_lineno,
+                        end_lineno=current_frame.line_span.end_lineno,
+                    )
                 ),
                 is_speculative_mode=is_speculative_mode,
             ),
@@ -120,12 +124,14 @@ def _parse_through_next_applicable_rule(
         )
         return None
 
-    if __debug__:
-        if state.line_descriptors[state.current_lineno].is_lazy_continuation:
-            raise RuntimeError(
-                f"Internal parser error: lazy continuation line {state.current_lineno} "
-                "was not consumed by the previous block rule."
-            )
+    # HACK
+    # in markdown-it-py, this is implicit
+    if state.line_descriptors[state.current_lineno].is_lazy_continuation:
+        logger.debug(
+            "_parse_through_next_applicable_rule completed frame cause line %r is lazy continuation",
+            state.current_lineno,
+        )
+        return None
 
     if state.is_line_outdented(state.current_lineno):
         logger.debug(
@@ -176,6 +182,7 @@ def _parse_frame(
     else:
         # Invariant: If the frame is not suspended, there is no active rule
         # context, so this must be the very first time we enter the frame.
+        state.current_lineno = current_frame.line_span.start_lineno
 
         command = _parse_through_next_applicable_rule(
             frames=frames,
@@ -266,7 +273,7 @@ def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChai
     while frames:
         current_frame = frames[-1]
 
-        logger.debug("Entered into frame: %r", current_frame)
+        logger.debug("(frame enter): %r", current_frame)
 
         match current_frame.causal_command.kind:
             case (
@@ -287,4 +294,7 @@ def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChai
 
         if upcall is not None:
             current_frame.return_upcall(upcall=upcall)
+
+            logger.debug("(frame exit): %r", current_frame)
+
             frames.pop()

@@ -43,12 +43,17 @@ def _try_consume_blockquote_prefix(
     ):
         line_descriptors_editor[lineno] = replace(
             current_line_descriptor,
-            current_after_marker_charno=current_line_descriptor.line_end_charno,
+            current_after_marker_charno=after_marker_charno,
             current_indented_marker_width=(
                 current_line_descriptor.current_content_indent_width + 1
             ),
             current_content_indent_width=0,
-            current_content_start_charno=current_line_descriptor.line_end_charno,
+            current_content_start_charno=after_marker_charno,
+        )
+        logger.debug(
+            "Updated line descriptor for line %r: %r",
+            lineno,
+            line_descriptors_editor[lineno],
         )
         return True
 
@@ -105,6 +110,12 @@ def _try_consume_blockquote_prefix(
         ),
         current_content_indent_width=content_indent_width,
         current_content_start_charno=content_start_charno,
+    )
+
+    logger.debug(
+        "Updated line descriptor for line %r: %r",
+        lineno,
+        line_descriptors_editor[lineno],
     )
 
     return True
@@ -224,6 +235,12 @@ def blockquote_rule(
             current_line_descriptor, is_lazy_continuation=True
         )
 
+        logger.debug(
+            "Updated line descriptor for line %r: %r",
+            local_attrs.current_lineno,
+            local_attrs.line_descriptors_editor[local_attrs.current_lineno],
+        )
+
         local_attrs.current_lineno += 1
 
     context.lookahead_matched = None
@@ -234,7 +251,7 @@ def blockquote_rule(
         if state.is_blank_line(local_attrs.current_lineno):
             logger.debug(
                 "Blockquote is terminated because of `blank_line` at line %r",
-                state.current_lineno,
+                local_attrs.current_lineno,
             )
             break
 
@@ -257,7 +274,7 @@ def blockquote_rule(
         if local_attrs.prev_marked_line_was_empty:
             logger.debug(
                 "Blockquote is terminated because of `prev_marked_line_was_empty` at line %r",
-                state.current_lineno,
+                local_attrs.current_lineno,
             )
             break
 

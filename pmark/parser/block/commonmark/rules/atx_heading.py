@@ -109,6 +109,10 @@ def atx_heading_rule(
     # after_markup_charno = line_end_charno, or
     # state.source[after_markup_charno] is space or tab
 
+    logger.debug(
+        "AtxHeading: matched with is_speculative_mode=%r", context.is_speculative_mode
+    )
+
     if context.is_speculative_mode:
         return BlockParserCommand.with_commit_success_kind()
 
