@@ -250,6 +250,9 @@ class BlockParserCommand:
                 operation. Its structure is defined by `BlockParserUpcall`.
         """
 
+        if self.kind is BlockParserCommandKind.INITIALIZE_ROOT_FRAME:
+            return None
+
         match upcall.kind:
             case BlockParserUpcallKind.LOOKAHEAD_ANY_RULE_MATCHED:
                 if self.kind is not BlockParserCommandKind.LOOKAHEAD_ANY_RULE_MATCHES:
