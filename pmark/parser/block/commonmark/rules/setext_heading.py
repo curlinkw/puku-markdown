@@ -6,6 +6,7 @@ from pmark.parser.block.rule import BlockParserRule
 from pmark.parser.block.frame_spec import BlockParserFrameSpec
 from pmark.parser.block.rule_chain import BlockParserRuleChain
 from pmark.parser.block.line_descriptor import LineDescriptor
+from pmark.parser.block.logger import logger
 from pmark.parser.block.commonmark.rules.locals.setext_heading import (
     SetextHeadingLocals,
 )
@@ -82,6 +83,7 @@ def setext_heading_rule(
     """
     Setext heading rule.
     """
+    logger.debug("Entered into setext_heading_rule at line %r", state.current_lineno)
 
     if not context.is_bound_to_production:
         if __debug__:

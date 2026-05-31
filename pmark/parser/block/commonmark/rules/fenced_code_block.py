@@ -2,6 +2,7 @@ from pmark.parser.block.state import BlockParserState
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
+from pmark.parser.block.logger import logger
 from pmark.elements.block.commonmark.fenced_code_block import FencedCodeBlock
 from pmark.line_span import LineSpan
 from pmark._utils.constants import (
@@ -29,6 +30,7 @@ def fenced_code_block_rule(
         - No use of `context.locals` (no suspension points).
         - Returns only `COMMIT_SUCCESS` or `COMMIT_REJECTION` command kinds.
     """
+    logger.debug("Entered into fenced_code_block_rule at line %r", state.current_lineno)
 
     start_lineno = context.line_span.start_lineno
     start_line_descriptor = state.line_descriptors[start_lineno]

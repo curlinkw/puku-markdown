@@ -5,6 +5,7 @@ from pmark.parser.block.command import BlockParserCommand, BlockParserCommandKin
 from pmark.parser.block.rule import BlockParserRule
 from pmark.parser.block.rule_chain import BlockParserRuleChain
 from pmark.parser.block.frame_spec import BlockParserFrameSpec
+from pmark.parser.block.logger import logger
 from pmark.parser.block.commonmark.rules.locals.link_reference_definition import (
     LinkReferenceDefinitionLocals,
     _LinkReferenceDefinitionStep,
@@ -359,6 +360,10 @@ def link_reference_definition_rule(
     """
     Link reference definition rule.
     """
+    logger.debug(
+        "Entered into link_reference_definition_rule at line %r", state.current_lineno
+    )
+
     if not context.is_bound_to_production:
         start_lineno = context.line_span.start_lineno
         start_line_descriptor = state.line_descriptors[start_lineno]

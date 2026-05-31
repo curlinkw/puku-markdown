@@ -241,8 +241,8 @@ def blockquote_rule(
                 lineno=local_attrs.current_lineno,
             ):
                 logger.debug(
-                    "Line %r is consumed via _try_consume_blockquote_prefix",
-                    state.current_lineno,
+                    "_try_consume_blockquote_prefix success at line %r",
+                    local_attrs.current_lineno,
                 )
                 local_attrs.current_lineno += 1
                 local_attrs.prev_marked_line_was_empty |= state.is_blank_line(

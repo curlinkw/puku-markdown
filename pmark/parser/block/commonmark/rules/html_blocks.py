@@ -5,6 +5,7 @@ from pmark.parser.block.state import BlockParserState
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
+from pmark.parser.block.logger import logger
 from pmark.elements.block.commonmark.html_block import HtmlBlock, HtmlBlockKind
 from pmark.line_span import LineSpan
 from pmark._utils.constants import LESS_THAN_CHARACTER
@@ -73,6 +74,7 @@ def _html_rule_impl(
         - No use of `context.locals` (no suspension points).
         - Returns only `COMMIT_SUCCESS` or `COMMIT_REJECTION` command kinds.
     """
+    logger.debug("Entered into _html_rule_impl at line %r", state.current_lineno)
 
     start_lineno = context.line_span.start_lineno
     start_line_descriptor = state.line_descriptors[start_lineno]
