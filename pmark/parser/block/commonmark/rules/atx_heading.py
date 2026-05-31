@@ -3,6 +3,7 @@ from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.parser.block.line_descriptor import LineDescriptor
+from pmark.parser.block.logger import logger
 from pmark.elements.block.commonmark.atx_heading import AtxHeading
 from pmark._utils.predicates import is_space_or_tab
 from pmark._utils.constants import HASH_CHARACTER, ATX_HEADING_MAX_LEVEL
@@ -61,6 +62,7 @@ def atx_heading_rule(
         - No use of `context.locals` (no suspension points).
         - Returns only `COMMIT_SUCCESS` or `COMMIT_REJECTION` command kinds.
     """
+    logger.debug("Entering paragraph_rule at line %r", state.current_lineno)
 
     start_lineno = context.line_span.start_lineno
     start_line_descriptor = state.line_descriptors[start_lineno]
@@ -125,5 +127,7 @@ def atx_heading_rule(
 
     if not inherited_attributes.try_attach_parent(block):
         state.target_document.append_root_block(block)
+
+    state.current_lineno = start_lineno + 1
 
     return BlockParserCommand.with_commit_success_kind()
