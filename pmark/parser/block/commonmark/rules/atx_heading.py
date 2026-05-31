@@ -62,7 +62,11 @@ def atx_heading_rule(
         - No use of `context.locals` (no suspension points).
         - Returns only `COMMIT_SUCCESS` or `COMMIT_REJECTION` command kinds.
     """
-    logger.debug("Entered into atx_heading_rule at line %r", state.current_lineno)
+    logger.debug(
+        "Entered into atx_heading_rule at state.current_lineno=%r; line_span=%r",
+        state.current_lineno,
+        context.line_span,
+    )
 
     start_lineno = context.line_span.start_lineno
     start_line_descriptor = state.line_descriptors[start_lineno]

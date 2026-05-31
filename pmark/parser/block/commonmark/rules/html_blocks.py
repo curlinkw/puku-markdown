@@ -74,7 +74,11 @@ def _html_rule_impl(
         - No use of `context.locals` (no suspension points).
         - Returns only `COMMIT_SUCCESS` or `COMMIT_REJECTION` command kinds.
     """
-    logger.debug("Entered into _html_rule_impl at line %r", state.current_lineno)
+    logger.debug(
+        "Entered into _html_rule_impl at state.current_lineno=%r; line_span=%r",
+        state.current_lineno,
+        context.line_span,
+    )
 
     start_lineno = context.line_span.start_lineno
     start_line_descriptor = state.line_descriptors[start_lineno]

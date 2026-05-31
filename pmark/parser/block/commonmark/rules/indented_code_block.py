@@ -27,7 +27,9 @@ def indented_code_block_rule(
         - Returns only `COMMIT_SUCCESS` or `COMMIT_REJECTION` command kinds.
     """
     logger.debug(
-        "Entered into indented_code_block_rule at line %r", state.current_lineno
+        "Entered into indented_code_block_rule at state.current_lineno=%r; line_span=%r",
+        state.current_lineno,
+        context.line_span,
     )
 
     if __debug__:

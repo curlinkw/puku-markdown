@@ -361,7 +361,9 @@ def link_reference_definition_rule(
     Link reference definition rule.
     """
     logger.debug(
-        "Entered into link_reference_definition_rule at line %r", state.current_lineno
+        "Entered into link_reference_definition_rule at state.current_lineno=%r; line_span=%r",
+        state.current_lineno,
+        context.line_span,
     )
 
     if not context.is_bound_to_production:

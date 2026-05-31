@@ -114,6 +114,10 @@ def _parse_through_next_applicable_rule(
     state.skip_blank_lines()
 
     if state.current_lineno not in current_frame.line_span:
+        logger.debug(
+            "_parse_through_next_applicable_rule completed frame after skipping blank lines: current_line = %r",
+            state.current_lineno,
+        )
         return None
 
     if __debug__:
@@ -124,6 +128,10 @@ def _parse_through_next_applicable_rule(
             )
 
     if state.is_line_outdented(state.current_lineno):
+        logger.debug(
+            "_parse_through_next_applicable_rule completed frame cause line %r is outdated",
+            state.current_lineno,
+        )
         return None
 
     if not is_first_call_in_frame:
