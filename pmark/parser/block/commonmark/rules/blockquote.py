@@ -9,6 +9,7 @@ from pmark.parser.block.commonmark.rules.locals.blockquote import BlockquoteLoca
 from pmark.parser.block.line_descriptor import LineDescriptor
 from pmark.parser.block.frame_spec import BlockParserFrameSpec
 from pmark.parser.block.rule_chain import BlockParserRuleChain
+from pmark.parser.block.block_stream import BlockParserBlockStream
 from pmark.elements.block.commonmark.blockquote import Blockquote
 from pmark.persistent_list.transactional_editor import TransactionalEditor
 from pmark.column_resolution import ColnoWithResolution, ColnoResolution
@@ -173,6 +174,17 @@ def blockquote_rule(
         expected_locals_type=BlockquoteLocals,
     )
 
+    if local_attrs.nested_parse_completed:
+        state.current_block_indent_width = (
+            local_attrs.expect_current_block_indent_width()
+        )
+
+        local_attrs.line_descriptors_editor.exit_transaction()
+
+        inherited_attributes.expect_block_stream()(local_attrs.expect_block())
+
+        return BlockParserCommand.with_commit_success_kind()
+
     if context.lookahead_matched is None:
         pass
     elif context.lookahead_matched:
@@ -229,48 +241,35 @@ def blockquote_rule(
                 rule_chain=BlockParserRuleChain.BLOCKQUOTE_TERMINATION,
                 actuals=BlockParserFrameActuals(
                     parent_production=BlockParserRule.BLOCKQUOTE,
-                    parent_block=None,
+                    block_stream=None,
                     continuation_line_limit=inherited_attributes.continuation_line_limit,
                 ),
             ),
             origin_rule_context=context,
         )
 
-    if not local_attrs.nested_parse_completed:
-        local_attrs.current_block_indent_width = state.current_block_indent_width
-        state.current_block_indent_width = 0
+    local_attrs.current_block_indent_width = state.current_block_indent_width
+    state.current_block_indent_width = 0
 
-        local_attrs.block = Blockquote(parent=None)
+    local_attrs.block = Blockquote()
 
-        if not inherited_attributes.try_attach_parent(local_attrs.block):
-            state.target_document.append_root_block(local_attrs.block)
+    local_attrs.nested_parse_completed = True
 
-        local_attrs.nested_parse_completed = True
-
-        return BlockParserCommand(
-            kind=BlockParserCommandKind.PARSE_NESTED,
-            child_frame_spec=BlockParserFrameSpec(
-                line_span=LineSpan(
-                    start_lineno=context.line_span.start_lineno,
-                    end_lineno=local_attrs.current_lineno,
-                ),
-                rule_chain=BlockParserRuleChain.FULL_COMMONMARK_RULE_CHAIN,
-                actuals=BlockParserFrameActuals(
-                    parent_production=BlockParserRule.BLOCKQUOTE,
-                    parent_block=local_attrs.block,
-                    continuation_line_limit=local_attrs.continuation_line_limit,
-                ),
+    return BlockParserCommand(
+        kind=BlockParserCommandKind.PARSE_NESTED,
+        child_frame_spec=BlockParserFrameSpec(
+            line_span=LineSpan(
+                start_lineno=context.line_span.start_lineno,
+                end_lineno=local_attrs.current_lineno,
             ),
-            origin_rule_context=context,
-        )
-    else:
-        if local_attrs.current_block_indent_width is None:
-            raise RuntimeError(
-                """`current_block_indent_width` cannot be `None` \
-                    when restoring indent width in blockquote nested parse"""
-            )
-        state.current_block_indent_width = local_attrs.current_block_indent_width
-
-        local_attrs.line_descriptors_editor.exit_transaction()
-
-        return BlockParserCommand.with_commit_success_kind()
+            rule_chain=BlockParserRuleChain.FULL_COMMONMARK_RULE_CHAIN,
+            actuals=BlockParserFrameActuals(
+                parent_production=BlockParserRule.BLOCKQUOTE,
+                block_stream=BlockParserBlockStream(
+                    local_attrs.expect_block().children.append
+                ),
+                continuation_line_limit=local_attrs.continuation_line_limit,
+            ),
+        ),
+        origin_rule_context=context,
+    )

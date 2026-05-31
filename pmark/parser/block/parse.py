@@ -12,6 +12,7 @@ from pmark.parser.block.rule_chain import BlockParserRuleChain
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.upcall import BlockParserUpcall, BlockParserUpcallKind
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
+from pmark.parser.block.block_stream import BlockParserBlockStream
 from pmark.parser.block.logger import logger
 
 
@@ -245,7 +246,11 @@ def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChai
                 origin_rule_context=None,
             ),
             actuals=BlockParserFrameActuals(
-                parent_production=None, parent_block=None, continuation_line_limit=None
+                parent_production=None,
+                block_stream=BlockParserBlockStream(
+                    emit=state.target_document.append_root_block
+                ),
+                continuation_line_limit=None,
             ),
         )
     ]

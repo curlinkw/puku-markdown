@@ -115,7 +115,6 @@ def _html_rule_impl(
     state.current_lineno = block_end_lineno
 
     block = HtmlBlock(
-        parent=None,
         kind=block_kind,
         content=state.indent_reduced_block_content(
             line_span=LineSpan(
@@ -126,8 +125,7 @@ def _html_rule_impl(
         ),
     )
 
-    if not inherited_attributes.try_attach_parent(block):
-        state.target_document.append_root_block(block)
+    inherited_attributes.expect_block_stream()(block)
 
     return BlockParserCommand.with_commit_success_kind()
 

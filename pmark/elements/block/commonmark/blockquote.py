@@ -1,8 +1,11 @@
-from dataclasses import dataclass
+from __future__ import annotations
+from dataclasses import dataclass, field
 
 from pmark.elements.block.base import BlockElement
 
 
 @dataclass(slots=True)
 class Blockquote(BlockElement):
-    pass
+    """Blockquote containing one or more block-level elements."""
+
+    children: list[BlockElement] = field(default_factory=list)

@@ -116,7 +116,6 @@ def atx_heading_rule(
     )
 
     block = AtxHeading(
-        parent=None,
         level=markup_length,
         content=state.source[
             after_markup_charno : start_line_descriptor.line_end_charno
@@ -125,8 +124,7 @@ def atx_heading_rule(
         ].strip(),
     )
 
-    if not inherited_attributes.try_attach_parent(block):
-        state.target_document.append_root_block(block)
+    inherited_attributes.expect_block_stream()(block)
 
     state.current_lineno = start_lineno + 1
 

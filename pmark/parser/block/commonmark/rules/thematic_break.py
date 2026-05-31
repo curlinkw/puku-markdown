@@ -70,9 +70,8 @@ def thematic_break_rule(
         return BlockParserCommand.with_commit_success_kind()
 
     state.current_lineno = context.line_span.start_lineno + 1
-    block = ThematicBreak(parent=None, markup=marker * marker_count)
+    block = ThematicBreak(markup=marker * marker_count)
 
-    if not inherited_attributes.try_attach_parent(block):
-        state.target_document.append_root_block(block)
+    inherited_attributes.expect_block_stream()(block)
 
     return BlockParserCommand.with_commit_success_kind()

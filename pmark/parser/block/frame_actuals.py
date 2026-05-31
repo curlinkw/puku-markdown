@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from pmark.parser.block.rule import BlockParserRule
-from pmark.elements.block import BlockElement
+from pmark.parser.block.block_stream import BlockParserBlockStream
 
 
 @dataclass(slots=True, frozen=True)
@@ -42,13 +42,12 @@ class BlockParserFrameActuals:
     initiated the current frame.
     """
 
-    parent_block: BlockElement | None  # block_element.parent
-    """
-    The block element that encloses the block currently being parsed.
+    block_stream: BlockParserBlockStream | None
+    """Stream that receives every finalized block, or `None` in speculative mode.
 
-    `None` when parsing at the document root (no parent block).
-    This field represents the parent in the output AST, distinct from
-    `parent_production` which tracks the parser rule hierarchy.
+    Called immediately after a block is fully parsed.
+    Reassignable to support nested contexts (e.g., lists intercepting children).
+    When `None`, streaming is disabled (e.g., during lookahead parsing).
     """
 
     continuation_line_limit: int | None
@@ -62,16 +61,23 @@ class BlockParserFrameActuals:
     allowing continuation until the end of the block or file.
     """
 
-    def try_attach_parent(self, block: BlockElement) -> bool:
-        """Attach the frame's parent block to the given block, if present.
+    def expect_block_stream(self) -> BlockParserBlockStream:
+        """Return the current block stream or raise if unavailable.
 
-        If `self.parent_block` is `None`, does nothing and returns `False`.
-        Otherwise, sets `block.parent = self.parent_block` and returns `True`.
+        Use this when streaming is mandatory (e.g., after confirming a block
+        is final and not part of speculative parsing).
 
-        Args:
-            block: The block element to become a child of the parent block.
+        Raises:
+            RuntimeError: If `block_stream` is `None`, indicating that
+                streaming was called in a speculative context where it
+                should not occur.
+
+        Returns:
+            The non-None block stream.
         """
-        if self.parent_block is None:
-            return False
-        block.parent = self.parent_block
-        return True
+        if self.block_stream is None:
+            raise RuntimeError(
+                "Block stream is None. Streaming is disabled in speculative mode "
+                "or the stream was not properly initialized."
+            )
+        return self.block_stream

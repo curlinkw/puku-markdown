@@ -152,7 +152,7 @@ def setext_heading_rule(
                 rule_chain=BlockParserRuleChain.SETEXT_HEADING_TERMINATION,
                 actuals=BlockParserFrameActuals(
                     parent_production=context.production,
-                    parent_block=None,
+                    block_stream=None,
                     continuation_line_limit=inherited_attributes.continuation_line_limit,
                 ),
             ),
@@ -168,7 +168,6 @@ def setext_heading_rule(
     state.current_lineno = local_attrs.current_lineno + 1
 
     block = SetextHeading(
-        parent=None,
         marker=local_attrs.marker,
         content=state.indent_reduced_block_content(
             line_span=LineSpan(
@@ -180,7 +179,6 @@ def setext_heading_rule(
         ).strip(),
     )
 
-    if not inherited_attributes.try_attach_parent(block):
-        state.target_document.append_root_block(block)
+    inherited_attributes.expect_block_stream()(block)
 
     return BlockParserCommand.with_commit_success_kind()

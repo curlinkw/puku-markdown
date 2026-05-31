@@ -6,6 +6,7 @@ from pmark.parser.block.rule import BlockParserRule
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 from pmark.parser.block.frame_spec import BlockParserFrameSpec
 from pmark.parser.block.rule_chain import BlockParserRuleChain
+from pmark.parser.block.logger import logger
 from pmark.elements.block.commonmark.paragraph import Paragraph
 from pmark.line_span import LineSpan
 
@@ -18,6 +19,7 @@ def paragraph_rule(
     """
     Paragraph rule.
     """
+    logger.debug("Entering paragraph_rule at line %r", state.current_lineno)
 
     if context.is_speculative_mode:
         return BlockParserCommand.with_commit_success_kind()
@@ -71,7 +73,7 @@ def paragraph_rule(
                 rule_chain=BlockParserRuleChain.PARAGRAPH_TERMINATION,
                 actuals=BlockParserFrameActuals(
                     parent_production=context.production,
-                    parent_block=None,
+                    block_stream=None,
                     continuation_line_limit=inherited_attributes.continuation_line_limit,
                 ),
             ),
@@ -81,7 +83,6 @@ def paragraph_rule(
     state.current_lineno = local_attrs.current_lineno
 
     block = Paragraph(
-        parent=None,
         content=state.indent_reduced_block_content(
             line_span=LineSpan(
                 start_lineno=context.line_span.start_lineno,
@@ -92,7 +93,6 @@ def paragraph_rule(
         ).strip(),
     )
 
-    if not inherited_attributes.try_attach_parent(block):
-        state.target_document.append_root_block(block)
+    inherited_attributes.expect_block_stream()(block)
 
     return BlockParserCommand.with_commit_success_kind()

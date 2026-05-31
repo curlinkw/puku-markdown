@@ -146,7 +146,6 @@ def fenced_code_block_rule(
     state.current_lineno = current_lineno + (1 if has_closing_fence else 0)
 
     block = FencedCodeBlock(
-        parent=None,
         markup=start_markup,
         info_string=start_info_string,
         content=state.indent_reduced_block_content(
@@ -158,7 +157,6 @@ def fenced_code_block_rule(
         ),
     )
 
-    if not inherited_attributes.try_attach_parent(block):
-        state.target_document.append_root_block(block)
+    inherited_attributes.expect_block_stream()(block)
 
     return BlockParserCommand.with_commit_success_kind()

@@ -65,7 +65,7 @@ def _assess_is_current_line_terminator(
             rule_chain=BlockParserRuleChain.LINK_REFERENCE_DEFINITION_TERMINATION,
             actuals=BlockParserFrameActuals(
                 parent_production=BlockParserRule.LINK_REFERENCE_DEFINITION,
-                parent_block=None,
+                block_stream=None,
                 continuation_line_limit=inherited_attributes.continuation_line_limit,
             ),
         ),
@@ -418,13 +418,11 @@ def link_reference_definition_rule(
         not context.is_speculative_mode
     ):
         block = LinkReferenceDefinition(
-            parent=None,
             label=local_attrs.link_label,
             href=local_attrs.expect_link_destination(),
             title=local_attrs.link_title,
         )
 
-        if not inherited_attributes.try_attach_parent(block):
-            state.target_document.append_root_block(block)
+        inherited_attributes.expect_block_stream()(block)
 
     return command

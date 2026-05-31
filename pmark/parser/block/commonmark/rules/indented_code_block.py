@@ -62,7 +62,6 @@ def indented_code_block_rule(
 
     state.current_lineno = current_lineno
     block = IdentedCodeBlock(
-        parent=None,
         content=state.indent_reduced_block_content(
             line_span=LineSpan(
                 start_lineno=context.line_span.start_lineno, end_lineno=last_lineno
@@ -74,7 +73,6 @@ def indented_code_block_rule(
         + LINE_FEED_CHARACTER,
     )
 
-    if not inherited_attributes.try_attach_parent(block):
-        state.target_document.append_root_block(block)
+    inherited_attributes.expect_block_stream()(block)
 
     return BlockParserCommand.with_commit_success_kind()
