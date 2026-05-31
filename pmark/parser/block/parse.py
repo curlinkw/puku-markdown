@@ -124,14 +124,11 @@ def _parse_through_next_applicable_rule(
         )
         return None
 
-    # HACK
-    # in markdown-it-py, this is implicit
     if state.line_descriptors[state.current_lineno].is_lazy_continuation:
-        logger.debug(
-            "_parse_through_next_applicable_rule completed frame cause line %r is lazy continuation",
-            state.current_lineno,
+        raise RuntimeError(
+            f"Internal parser error: lazy continuation line {state.current_lineno} "
+            "was not consumed by the previous block rule."
         )
-        return None
 
     if state.is_line_outdented(state.current_lineno):
         logger.debug(
