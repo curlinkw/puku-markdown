@@ -12,5 +12,8 @@ def list_rule(
     """
     Link reference definition rule.
     """
-    # TODO
-    return BlockParserCommand.with_commit_rejection_kind()
+    if not context.is_bound_to_production:
+        start_lineno = context.line_span.start_lineno
+
+        if state.meets_indented_code_block_indent(start_lineno):
+            return BlockParserCommand.with_commit_rejection_kind()

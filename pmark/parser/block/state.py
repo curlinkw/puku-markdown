@@ -34,6 +34,14 @@ class BlockParserState:
     considered outdented and terminate the block.
     """
 
+    current_list_marker_indent: int | None = field(default=None)
+    """
+    Visual column width (tabs expanded to spaces) from the start of the current line
+    to the first character of the current list marker (e.g., the '-' in '- item', the '1' in '1. item').
+
+    Set to `None` when not inside any list.
+    """
+
     line_descriptors: PersistentList[LineDescriptor] = field(
         init=False, default_factory=PersistentList
     )
@@ -115,6 +123,19 @@ class BlockParserState:
     def __post_init__(self):
         """Just compute line boundaries."""
         self._compute_line_descriptors()
+
+    def expect_current_list_marker_indent(self) -> int:
+        """
+        Return the current list marker start indent (int), or raise if not in a list.
+
+        Raises:
+            RuntimeError: If `current_list_marker_indent` is None.
+        """
+        if self.current_list_marker_indent is None:
+            raise RuntimeError(
+                "Expected current_list_marker_indent to be set (not inside a list)"
+            )
+        return self.current_list_marker_indent
 
     def is_blank_line(self, lineno: int) -> bool:
         """
@@ -423,30 +444,32 @@ class BlockParserState:
             for lineno in range(line_span.start_lineno, line_span.end_lineno)
         )
 
-    def meets_indented_code_block_indent(self, lineno: int) -> bool:
+    def meets_indented_code_block_indent(
+        self, lineno: int, relative_to_current_list_marker: bool = False
+    ) -> bool:
         """
-        Return True if the line's content indentation exceeds the current block's
-        indentation by at least `INDENTED_CODE_BLOCK_MIN_INDENT` (4 spaces).
+        Return True if line indentation ≥ baseline + INDENTED_CODE_BLOCK_MIN_INDENT (4).
 
-        Indented code blocks in CommonMark are defined relative to the enclosing
-        block's indentation level. For example, inside a list item that already has
-        2 spaces of indentation, a line needs 6 total spaces (2 block + 4 extra) to
-        start an indented code block.
+        Baseline is `current_block_indent_width` unless `relative_to_current_list_marker`
+        is True, in which case baseline is `current_list_marker_indent` (must be set).
 
         Args:
-            lineno: Line index (0-based) within the current block.
+            lineno: Zero-based line index.
+            relative_to_current_list_marker: Use list marker indent as baseline.
 
         Returns:
-            True if the relative indentation meets or exceeds the threshold,
-            otherwise False.
+            True if the difference meets or exceeds the threshold, else False.
 
-        Note:
-            This is a *necessary* condition only. The caller must also enforce
-            that an indented code block cannot interrupt a paragraph.
+        Raises:
+            RuntimeError: If `relative_to_current_list_marker` is True but no list is active.
         """
         return (
             self.line_descriptors[lineno].current_content_indent_width
-            - self.current_block_indent_width
+            - (
+                self.expect_current_list_marker_indent()
+                if relative_to_current_list_marker
+                else self.current_block_indent_width
+            )
         ) >= INDENTED_CODE_BLOCK_MIN_INDENT
 
     def is_content_start_beyond_source(self, lineno: int) -> bool:

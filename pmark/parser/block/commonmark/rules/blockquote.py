@@ -228,6 +228,10 @@ def blockquote_rule(
         local_attrs.current_lineno < context.line_span.end_lineno
     ):
         if state.is_blank_line(local_attrs.current_lineno):
+            logger.debug(
+                "Blockquote is terminated because of `blank_line` at line %r",
+                state.current_lineno,
+            )
             break
 
         if not state.is_line_outdented(local_attrs.current_lineno):
@@ -247,6 +251,10 @@ def blockquote_rule(
                 continue
 
         if local_attrs.prev_marked_line_was_empty:
+            logger.debug(
+                "Blockquote is terminated because of `prev_marked_line_was_empty` at line %r",
+                state.current_lineno,
+            )
             break
 
         return BlockParserCommand(
