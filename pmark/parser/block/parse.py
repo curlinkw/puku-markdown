@@ -12,6 +12,7 @@ from pmark.parser.block.rule_chain import BlockParserRuleChain
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.upcall import BlockParserUpcall, BlockParserUpcallKind
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
+from pmark.parser.block.logger import logger
 
 
 def _process_command(
@@ -251,6 +252,8 @@ def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChai
 
     while frames:
         current_frame = frames[-1]
+
+        logger.debug("Entering frame: %r", current_frame)
 
         match current_frame.causal_command.kind:
             case (
