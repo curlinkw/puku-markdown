@@ -164,7 +164,7 @@ def blockquote_rule(
         )
 
         context.bind_production(
-            production=BlockParserRule.SETEXT_HEADING,
+            production=BlockParserRule.BLOCKQUOTE,
             local_attributes=start_local_attrs,
         )
 
