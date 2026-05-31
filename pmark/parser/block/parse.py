@@ -258,7 +258,7 @@ def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChai
     while frames:
         current_frame = frames[-1]
 
-        logger.debug("Entering frame: %r", current_frame)
+        logger.debug("Entered into frame: %r", current_frame)
 
         match current_frame.causal_command.kind:
             case (

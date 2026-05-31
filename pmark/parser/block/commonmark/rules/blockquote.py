@@ -10,6 +10,7 @@ from pmark.parser.block.line_descriptor import LineDescriptor
 from pmark.parser.block.frame_spec import BlockParserFrameSpec
 from pmark.parser.block.rule_chain import BlockParserRuleChain
 from pmark.parser.block.block_stream import BlockParserBlockStream
+from pmark.parser.block.logger import logger
 from pmark.elements.block.commonmark.blockquote import Blockquote
 from pmark.persistent_list.transactional_editor import TransactionalEditor
 from pmark.column_resolution import ColnoWithResolution, ColnoResolution
@@ -117,6 +118,7 @@ def blockquote_rule(
     """
     Blockquote rule.
     """
+    logger.debug("Entered into blockquote_rule at line %r", state.current_lineno)
 
     if not context.is_bound_to_production:
         start_lineno = context.line_span.start_lineno
@@ -129,9 +131,15 @@ def blockquote_rule(
                 )
 
         if state.meets_indented_code_block_indent(start_lineno):
+            logger.debug(
+                "Rejected blockquote_rule because of `meets_indented_code_block_indent`"
+            )
             return BlockParserCommand.with_commit_rejection_kind()
 
         if state.is_content_start_beyond_source(start_lineno):
+            logger.debug(
+                "Rejected blockquote_rule because of `is_content_start_beyond_source`"
+            )
             return BlockParserCommand.with_commit_rejection_kind()
 
         if (
@@ -140,6 +148,10 @@ def blockquote_rule(
             ]
             != GREATER_THAN_CHARACTER
         ):
+            logger.debug(
+                "Rejected blockquote_rule because of `wrong marker`. With line descriptor: %r",
+                state.line_descriptors[start_lineno],
+            )
             return BlockParserCommand.with_commit_rejection_kind()
 
         if context.is_speculative_mode:
@@ -188,6 +200,8 @@ def blockquote_rule(
     if context.lookahead_matched is None:
         pass
     elif context.lookahead_matched:
+        logger.debug("Set continuation_line_limit=%r", local_attrs.current_lineno)
+
         local_attrs.is_terminated = True
         local_attrs.continuation_line_limit = local_attrs.current_lineno
 
@@ -222,6 +236,10 @@ def blockquote_rule(
                 line_descriptors_editor=local_attrs.line_descriptors_editor,
                 lineno=local_attrs.current_lineno,
             ):
+                logger.debug(
+                    "Line %r is consumed via _try_consume_blockquote_prefix",
+                    state.current_lineno,
+                )
                 local_attrs.current_lineno += 1
                 local_attrs.prev_marked_line_was_empty |= state.is_blank_line(
                     local_attrs.current_lineno

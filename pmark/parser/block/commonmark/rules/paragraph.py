@@ -19,7 +19,7 @@ def paragraph_rule(
     """
     Paragraph rule.
     """
-    logger.debug("Entering paragraph_rule at line %r", state.current_lineno)
+    logger.debug("Entered into paragraph_rule at line %r", state.current_lineno)
 
     if context.is_speculative_mode:
         return BlockParserCommand.with_commit_success_kind()
@@ -80,6 +80,11 @@ def paragraph_rule(
             origin_rule_context=context,
         )
 
+    logger.debug(
+        "Lines [%r,%r) are consumed via paragraph_rule",
+        state.current_lineno,
+        local_attrs.current_lineno,
+    )
     state.current_lineno = local_attrs.current_lineno
 
     block = Paragraph(
