@@ -370,12 +370,11 @@ def link_reference_definition_rule(
         start_lineno = context.line_span.start_lineno
         start_line_descriptor = state.line_descriptors[start_lineno]
 
-        if __debug__:
-            if start_line_descriptor.is_lazy_continuation:
-                raise RuntimeError(
-                    f"Internal parser error: lazy continuation line {start_lineno} "
-                    "was not consumed by the previous block rule."
-                )
+        if start_line_descriptor.is_lazy_continuation:
+            raise RuntimeError(
+                f"Internal parser error: lazy continuation line {start_lineno} "
+                "was not consumed by the previous block rule."
+            )
 
         if state.meets_indented_code_block_indent(start_lineno):
             return BlockParserCommand.with_commit_rejection_kind()

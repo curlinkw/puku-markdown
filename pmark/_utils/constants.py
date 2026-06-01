@@ -269,3 +269,15 @@ SINGLE_QUOTE_CHARACTER: Final[str] = "'"
 """
 Apostrophe / single quote ' (U+0027).
 """
+
+BULLET_LIST_MARKERS: Final[frozenset[str]] = frozenset({"*", "-", "+"})
+"""Bullet list markers as defined in CommonMark section 5.2 (version 0.31.2).
+
+A line beginning with one of these characters, followed by a space or tab,
+starts a bullet list item. The marker may be preceded by up to three spaces
+of indentation.
+
+References:
+- https://spec.commonmark.org/0.31.2/#list-items
+- https://spec.commonmark.org/0.31.2/#bullet-list-marker
+"""
