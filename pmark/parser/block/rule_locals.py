@@ -23,6 +23,7 @@ from pmark.parser.block.commonmark.rules.locals import (
     SetextHeadingLocals,
     BlockquoteLocals,
     LinkReferenceDefinitionLocals,
+    ListLocals,
 )
 
 
@@ -31,6 +32,7 @@ BlockParserRuleLocals = Union[
     SetextHeadingLocals,
     BlockquoteLocals,
     LinkReferenceDefinitionLocals,
+    ListLocals,
 ]
 
 BlockParserRuleLocalsT = TypeVar("BlockParserRuleLocalsT", bound=BlockParserRuleLocals)

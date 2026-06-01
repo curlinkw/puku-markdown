@@ -2,6 +2,8 @@ from pmark.parser.block.state import BlockParserState
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
+from pmark.parser.block.rule import BlockParserRule
+from pmark.parser.block.commonmark.rules.locals.list import ListLocals
 
 
 def list_rule(
@@ -12,7 +14,6 @@ def list_rule(
     """
     Link reference definition rule.
     """
-    return BlockParserCommand.with_commit_rejection_kind()
 
     if not context.is_bound_to_production:
         start_lineno = context.line_span.start_lineno
@@ -28,3 +29,14 @@ def list_rule(
             and state.is_line_outdented(start_lineno)
         ):
             return BlockParserCommand.with_commit_rejection_kind()
+
+        context.bind_production(
+            production=BlockParserRule.LIST, local_attributes=ListLocals()
+        )
+
+    local_attrs = context.expect_local_attributes(
+        expected_production=BlockParserRule.LIST,
+        expected_locals_type=ListLocals,
+    )
+
+    return BlockParserCommand.with_commit_rejection_kind()

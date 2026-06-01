@@ -90,17 +90,12 @@ def fenced_code_block_rule(
     while current_lineno < context.line_span.end_lineno:
         current_line_descriptor = state.line_descriptors[current_lineno]
 
-        if __debug__:
+        if not current_line_descriptor.is_blank:
             if current_line_descriptor.is_lazy_continuation:
-                raise RuntimeError(
-                    f"Internal parser error: lazy continuation line {current_lineno} "
-                    "was not consumed by the previous block rule."
-                )
+                break
 
-        if state.is_line_outdented(current_lineno) and (
-            not current_line_descriptor.is_blank
-        ):
-            break
+            if state.is_line_outdented(current_lineno):
+                break
 
         if state.is_content_start_beyond_source(current_lineno):
             break

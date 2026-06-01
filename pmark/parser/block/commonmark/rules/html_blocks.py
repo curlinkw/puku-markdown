@@ -34,12 +34,8 @@ def _find_block_end_lineno(
     for current_lineno in range(line_span.start_lineno, line_span.end_lineno):
         current_line_descriptor = state.line_descriptors[current_lineno]
 
-        if __debug__:
-            if current_line_descriptor.is_lazy_continuation:
-                raise RuntimeError(
-                    f"Internal parser error: lazy continuation line {current_lineno} "
-                    "was not consumed by the previous block rule."
-                )
+        if current_line_descriptor.is_lazy_continuation:
+            return current_lineno
 
         if state.is_line_outdented(current_lineno):
             return current_lineno

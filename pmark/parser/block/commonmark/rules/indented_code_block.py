@@ -32,12 +32,8 @@ def indented_code_block_rule(
         context.line_span,
     )
 
-    if __debug__:
-        if state.line_descriptors[context.line_span.start_lineno].is_lazy_continuation:
-            raise RuntimeError(
-                f"Internal parser error: lazy continuation line {context.line_span.start_lineno} "
-                "was not consumed by the previous block rule."
-            )
+    if state.line_descriptors[context.line_span.start_lineno].is_lazy_continuation:
+        return BlockParserCommand.with_commit_rejection_kind()
 
     if not state.meets_indented_code_block_indent(context.line_span.start_lineno):
         return BlockParserCommand.with_commit_rejection_kind()
@@ -48,16 +44,12 @@ def indented_code_block_rule(
     last_lineno = current_lineno = context.line_span.start_lineno + 1
 
     while current_lineno < context.line_span.end_lineno:
-        if __debug__:
-            if state.line_descriptors[current_lineno].is_lazy_continuation:
-                raise RuntimeError(
-                    f"Internal parser error: lazy continuation line {current_lineno} "
-                    "was not consumed by the previous block rule."
-                )
-
         if state.is_blank_line(current_lineno):
             current_lineno += 1
             continue
+
+        if state.line_descriptors[current_lineno].is_lazy_continuation:
+            break
 
         if state.meets_indented_code_block_indent(current_lineno):
             current_lineno += 1
