@@ -10,6 +10,7 @@ from pmark.parser.block.commonmark.rules.html_blocks import (
     html_raw_text_tag_rule,
     html_tag_rule,
     HTML_BLOCK_RULES,
+    HTML_RULES_AS_BLOCK_TERMINATORS,
 )
 from pmark.parser.block.commonmark.rules.indented_code_block import (
     indented_code_block_rule,
@@ -24,6 +25,7 @@ from pmark.parser.block.commonmark.rules.list import list_rule
 
 __all__ = [
     "HTML_BLOCK_RULES",
+    "HTML_RULES_AS_BLOCK_TERMINATORS",
     "atx_heading_rule",
     "blockquote_rule",
     "fenced_code_block_rule",

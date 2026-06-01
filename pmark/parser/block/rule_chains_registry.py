@@ -3,6 +3,7 @@ from typing import Final, Mapping
 
 from pmark.parser.block.commonmark import (
     HTML_BLOCK_RULES,
+    HTML_RULES_AS_BLOCK_TERMINATORS,
     atx_heading_rule,
     blockquote_rule,
     fenced_code_block_rule,
@@ -22,7 +23,7 @@ _COMMON_TERMINATORS: Final[tuple[BlockParserRuleFunc, ...]] = (
     blockquote_rule,
     thematic_break_rule,
     list_rule,
-    *HTML_BLOCK_RULES,
+    *HTML_RULES_AS_BLOCK_TERMINATORS,
     atx_heading_rule,
 )
 """

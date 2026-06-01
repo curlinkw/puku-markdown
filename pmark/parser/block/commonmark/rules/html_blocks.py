@@ -287,3 +287,27 @@ Rule mapping to `markdown-it-py` `HTML_SEQUENCES`:
 Note:
     Do not change this order unless you also update the underlying precedence.
 """
+
+
+HTML_RULES_AS_BLOCK_TERMINATORS: Final[tuple[BlockParserRuleFunc, ...]] = (
+    html_raw_text_tag_rule,
+    html_comment_rule,
+    html_processing_instruction_rule,
+    html_markup_declaration_rule,
+    html_cdata_rule,
+    html_block_level_tag_rule,
+)
+"""
+HTML rules that act as **block terminators** in the Markdown parsing context.
+
+When any of these rules matches, the current block (paragraph, list item,
+blockquote, etc.) ends immediately. The matched HTML content is then processed
+as its own block.
+
+This set excludes `html_tag_rule` because that rule matches inline‑level tags
+which must **not** terminate blocks - they should be parsed as inline HTML
+inside the current block.
+
+Use this set when checking for conditions that should close a block (e.g.,
+inside a paragraph rule, before heading detection).
+"""
