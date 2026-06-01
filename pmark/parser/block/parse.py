@@ -125,10 +125,23 @@ def _parse_through_next_applicable_rule(
         return None
 
     if state.line_descriptors[state.current_lineno].is_lazy_continuation:
-        raise RuntimeError(
-            f"Internal parser error: lazy continuation line {state.current_lineno} "
-            "was not consumed by the previous block rule."
-        )
+        # This line is marked as a lazy continuation (e.g., because it had no '>'
+        # inside a blockquote but was not terminated by an empty line or another tag).
+        # It reached the nested tokenizer because the previous block rule (e.g., heading)
+        # did NOT consume it – that block cannot be continued across lines.
+        # Breaking here is correct and intentional: it forces the nested parser
+        # to stop this line.
+        #
+        # TODO: Re‑evaluate the lazy continuation handling in the overall parser architecture.
+        #
+        # The current approach (marking a line with is_lazy_continuation = True) is an
+        # implicit side‑effect of the original markdown‑it‑py sentinel (-1 indentation).
+        # The break here is necessary for blocks that cannot be continued (e.g., headings),
+        # but the design is fragile and non‑obvious.
+        #
+        #
+        # This whole mechanism should be reviewed and refactored after full test coverage.
+        return None
 
     if state.is_line_outdented(state.current_lineno):
         logger.debug(

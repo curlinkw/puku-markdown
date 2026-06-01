@@ -229,6 +229,12 @@ def blockquote_rule(
                     - state.current_block_indent_width
                 ),
             )
+
+            logger.debug(
+                "Updated line descriptor for line %r: %r",
+                local_attrs.current_lineno,
+                local_attrs.line_descriptors_editor[local_attrs.current_lineno],
+            )
     else:
         current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
         local_attrs.line_descriptors_editor[local_attrs.current_lineno] = replace(
@@ -265,10 +271,10 @@ def blockquote_rule(
                     "_try_consume_blockquote_prefix success at line %r",
                     local_attrs.current_lineno,
                 )
-                local_attrs.current_lineno += 1
                 local_attrs.prev_marked_line_was_empty |= state.is_blank_line(
                     local_attrs.current_lineno
                 )
+                local_attrs.current_lineno += 1
                 continue
 
         if local_attrs.prev_marked_line_was_empty:
@@ -277,6 +283,10 @@ def blockquote_rule(
                 local_attrs.current_lineno,
             )
             break
+
+        logger.debug(
+            "Blockquote checks for termination at line %r", local_attrs.current_lineno
+        )
 
         return BlockParserCommand(
             kind=BlockParserCommandKind.LOOKAHEAD_ANY_RULE_MATCHES,

@@ -79,15 +79,20 @@ def atx_heading_rule(
             )
 
     if state.meets_indented_code_block_indent(start_lineno):
+        logger.debug(
+            "atx_heading_rule is rejected because of `meets_indented_code_block_indent`"
+        )
         return BlockParserCommand.with_commit_rejection_kind()
 
     if start_line_descriptor.is_blank:
+        logger.debug("atx_heading_rule is rejected because of `is_blank`")
         return BlockParserCommand.with_commit_rejection_kind()
 
     marker_charno = start_line_descriptor.current_content_start_charno
     marker = state.source[marker_charno]
 
     if marker != HASH_CHARACTER:
+        logger.debug("atx_heading_rule is rejected because of `wrong marker`")
         return BlockParserCommand.with_commit_rejection_kind()
 
     markup_length = state.count_run_of_char(
