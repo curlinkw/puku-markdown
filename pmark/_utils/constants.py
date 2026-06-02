@@ -281,3 +281,13 @@ References:
 - https://spec.commonmark.org/0.31.2/#list-items
 - https://spec.commonmark.org/0.31.2/#bullet-list-marker
 """
+
+ORDERED_LIST_MARKER_DELIMITERS: Final[frozenset[str]] = frozenset({".", ")"})
+"""Ordered list marker delimiters as defined in CommonMark section 5.2 (version 0.31.2).
+
+An ordered list marker consists of a positive integer followed by a delimiter
+character: either a period (`.`) or a right parenthesis (`)`). This constant
+holds the two allowed delimiter characters.
+
+Reference: https://spec.commonmark.org/0.31.2/#list-items
+"""

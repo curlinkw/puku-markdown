@@ -11,7 +11,6 @@ from pmark._utils.constants import HASH_CHARACTER, ATX_HEADING_MAX_LEVEL
 
 def _trailing_markup_start(
     state: BlockParserState,
-    lineno: int,
     line_desciptor: LineDescriptor,
     after_markup_charno: int,
 ) -> int | None:
@@ -122,7 +121,6 @@ def atx_heading_rule(
 
     trailing_markup_start = _trailing_markup_start(
         state=state,
-        lineno=start_lineno,
         line_desciptor=start_line_descriptor,
         after_markup_charno=after_markup_charno,
     )

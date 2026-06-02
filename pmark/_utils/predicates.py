@@ -24,3 +24,15 @@ def is_ascii_control(character: str) -> bool:
     """
     code = ord(character)
     return code < 0x20 or code == 0x7F
+
+
+def is_ascii_digit(character: str) -> bool:
+    """
+    Return True if the character is an ASCII digit (U+0030-U+0039).
+
+    This is equivalent to `'0' <= character <= '9'` and is the most
+    readable and performant way to test for ASCII digits.
+
+    Reference: https://spec.commonmark.org/0.31.2/#list-items
+    """
+    return "0" <= character <= "9"
