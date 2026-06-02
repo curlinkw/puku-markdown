@@ -1,13 +1,24 @@
+from dataclasses import dataclass, replace
+
 from pmark.parser.block.state import BlockParserState
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 from pmark.parser.block.rule_context import BlockParserRuleContext
-from pmark.parser.block.command import BlockParserCommand
+from pmark.parser.block.command import BlockParserCommand, BlockParserCommandKind
 from pmark.parser.block.rule import BlockParserRule
-from pmark.parser.block.commonmark.rules.locals.list import ListLocals
+from pmark.parser.block.commonmark.rules.locals.list import ListLocals, _ListScanStep
+from pmark.parser.block.frame_spec import BlockParserFrameSpec
 from pmark.parser.block.line_descriptor import LineDescriptor
+from pmark.parser.block.rule_chain import BlockParserRuleChain
+from pmark.line_span import LineSpan
+from pmark.persistent_list.transactional_editor import TransactionalEditor
 from pmark.elements.block.commonmark.list import ListKind
+from pmark.column_resolution import ColnoWithResolution
 from pmark._utils.predicates import is_space_or_tab, is_ascii_digit
-from pmark._utils.constants import BULLET_LIST_MARKERS, ORDERED_LIST_MARKER_DELIMITERS
+from pmark._utils.constants import (
+    BULLET_LIST_MARKERS,
+    ORDERED_LIST_MARKER_DELIMITERS,
+    INDENTED_CODE_BLOCK_MIN_INDENT,
+)
 
 
 def _get_after_bullet_marker_charno(
@@ -140,7 +151,7 @@ def list_rule_as_terminator(
     is_start_line_outdented = state.is_line_outdented(start_lineno)
 
     if (
-        (state.current_list_marker_indent is not None)
+        (state.current_list_marker_indent_width is not None)
         and state.meets_indented_code_block_indent(
             lineno=start_lineno, relative_to_current_list_marker=True
         )
@@ -176,6 +187,18 @@ def list_rule_as_terminator(
     return BlockParserCommand.with_commit_success_kind()
 
 
+@dataclass(slots=True, frozen=True)
+class _AfterItemDirective:
+    should_terminate: bool | None = None
+    command: BlockParserCommand | None = None
+
+
+def _scan_after_item(
+    local_attrs: ListLocals,
+) -> _AfterItemDirective:
+    pass
+
+
 def list_rule(
     state: BlockParserState,
     inherited_attributes: BlockParserFrameActuals,
@@ -185,14 +208,30 @@ def list_rule(
     Link reference definition rule.
     """
 
+    if context.is_speculative_mode:
+        raise RuntimeError(
+            (
+                f"Internal parser error: list_rule is called in invalid context: "
+                f"speculative={context.is_speculative_mode}, "
+            )
+        )
+
     if not context.is_bound_to_production:
         start_lineno = context.line_span.start_lineno
+        start_line_descriptor = state.line_descriptors[start_lineno]
+
+        if start_line_descriptor.is_lazy_continuation:
+            # must be handled in parent
+            raise RuntimeError(
+                f"Internal parser error: lazy continuation line {start_lineno} "
+                "was not consumed by the previous block rule."
+            )
 
         if state.meets_indented_code_block_indent(start_lineno):
             return BlockParserCommand.with_commit_rejection_kind()
 
         if (
-            (state.current_list_marker_indent is not None)
+            (state.current_list_marker_indent_width is not None)
             and state.meets_indented_code_block_indent(
                 lineno=start_lineno, relative_to_current_list_marker=True
             )
@@ -200,13 +239,130 @@ def list_rule(
         ):
             return BlockParserCommand.with_commit_rejection_kind()
 
+        if (
+            scanned_marker := _scan_marker(
+                state=state,
+                line_descriptor=start_line_descriptor,
+                require_ordered_list_starts_with_one=False,
+            )
+        ) is None:
+            return BlockParserCommand.with_commit_rejection_kind()
+
+        after_marker_charno, list_kind = scanned_marker
+
         context.bind_production(
-            production=BlockParserRule.LIST, local_attributes=ListLocals()
+            production=BlockParserRule.LIST,
+            local_attributes=ListLocals(
+                list_kind=list_kind,
+                current_after_marker_charno=after_marker_charno,
+                marker_char=state.source[after_marker_charno - 1],
+                current_item_start_lineno=start_lineno,
+                current_lineno=start_lineno,
+                line_descriptors_editor=TransactionalEditor[LineDescriptor](
+                    target=state.line_descriptors
+                ),
+            ),
         )
 
     local_attrs = context.expect_local_attributes(
         expected_production=BlockParserRule.LIST,
         expected_locals_type=ListLocals,
     )
+
+    end_lineno = context.line_span.end_lineno
+
+    match local_attrs.step:
+        case _ListScanStep.INITIAL:
+            pass
+
+    while local_attrs.current_lineno < end_lineno:
+        current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
+        current_item_start_line_descriptor = state.line_descriptors[
+            local_attrs.current_item_start_lineno
+        ]
+
+        indented_marker_width = current_line_descriptor.current_content_indent_width + (
+            local_attrs.current_after_marker_charno
+            - current_item_start_line_descriptor.current_content_start_charno
+        )
+
+        if (
+            local_attrs.current_after_marker_charno
+            >= current_line_descriptor.line_end_charno
+        ):
+            resolved_content_start = ColnoWithResolution.at_zero_width_character_start(
+                colno=indented_marker_width,
+                charno=local_attrs.current_after_marker_charno,
+            )
+        else:
+            resolved_content_start = state.resolve_next_non_space_or_tab(
+                start=ColnoWithResolution.at_character_start(
+                    start_colno=indented_marker_width,
+                    charno=local_attrs.current_after_marker_charno,
+                    character=state.source[local_attrs.current_after_marker_charno],
+                ),
+                end_charno=current_line_descriptor.line_end_charno,
+            )
+
+        after_marker_indent_width = (
+            1
+            if resolved_content_start.resolution.charno
+            >= current_line_descriptor.line_end_charno
+            else resolved_content_start.colno - indented_marker_width
+        )
+
+        if after_marker_indent_width > INDENTED_CODE_BLOCK_MIN_INDENT:
+            after_marker_indent_width = 1
+
+        local_attrs.persistent_list_marker_indent_width = (
+            state.current_list_marker_indent_width
+        )
+        state.current_list_marker_indent_width = state.current_block_indent_width
+
+        local_attrs.persistent_block_indent_width = state.current_block_indent_width
+        state.current_block_indent_width = (
+            after_marker_indent_width + indented_marker_width
+        )
+
+        if (
+            resolved_content_start.resolution.charno
+            >= current_line_descriptor.line_end_charno
+            and state.is_blank_line(local_attrs.current_item_start_lineno + 1)
+        ):
+            # workaround for this case
+            # (list item is empty, list terminates before "foo"):
+            # ~~~~~~~~
+            #   -
+            #
+            #     foo
+            # ~~~~~~~~
+            state.current_lineno = min(state.current_lineno + 2, end_lineno)
+        else:
+            local_attrs.line_descriptors_editor.enter_transaction()
+
+            local_attrs.line_descriptors_editor[
+                local_attrs.current_item_start_lineno
+            ] = replace(
+                current_item_start_line_descriptor,
+                current_content_start_charno=resolved_content_start.resolution.charno,
+                current_content_indent_width=resolved_content_start.colno,
+            )
+
+            return BlockParserCommand(
+                kind=BlockParserCommandKind.PARSE_NESTED,
+                child_frame_spec=BlockParserFrameSpec(
+                    line_span=LineSpan(
+                        start_lineno=local_attrs.current_item_start_lineno,
+                        end_lineno=end_lineno,
+                    ),
+                    rule_chain=BlockParserRuleChain.FULL_COMMONMARK_RULE_CHAIN,
+                    actuals=BlockParserFrameActuals(
+                        parent_production=BlockParserRule.LIST,
+                        block_stream=None,
+                        continuation_line_limit=inherited_attributes.continuation_line_limit,
+                    ),
+                ),
+                origin_rule_context=context,
+            )
 
     return BlockParserCommand.with_commit_rejection_kind()

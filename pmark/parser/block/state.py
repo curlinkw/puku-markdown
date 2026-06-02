@@ -34,7 +34,7 @@ class BlockParserState:
     considered outdented and terminate the block.
     """
 
-    current_list_marker_indent: int | None = field(default=None)
+    current_list_marker_indent_width: int | None = field(default=None)
     """
     Visual column width (tabs expanded to spaces) from the start of the current line
     to the first character of the current list marker (e.g., the '-' in '- item', the '1' in '1. item').
@@ -124,18 +124,18 @@ class BlockParserState:
         """Just compute line boundaries."""
         self._compute_line_descriptors()
 
-    def expect_current_list_marker_indent(self) -> int:
+    def expect_current_list_marker_indent_width(self) -> int:
         """
-        Return the current list marker start indent (int), or raise if not in a list.
+        Return the current list marker start indent width (int), or raise if not in a list.
 
         Raises:
-            RuntimeError: If `current_list_marker_indent` is None.
+            RuntimeError: If `current_list_marker_indent_width` is None.
         """
-        if self.current_list_marker_indent is None:
+        if self.current_list_marker_indent_width is None:
             raise RuntimeError(
                 "Expected current_list_marker_indent to be set (not inside a list)"
             )
-        return self.current_list_marker_indent
+        return self.current_list_marker_indent_width
 
     def is_blank_line(self, lineno: int) -> bool:
         """
@@ -466,7 +466,7 @@ class BlockParserState:
         return (
             self.line_descriptors[lineno].current_content_indent_width
             - (
-                self.expect_current_list_marker_indent()
+                self.expect_current_list_marker_indent_width()
                 if relative_to_current_list_marker
                 else self.current_block_indent_width
             )
