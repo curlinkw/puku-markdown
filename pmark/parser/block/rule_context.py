@@ -175,3 +175,46 @@ class BlockParserRuleContext:
 
         # The cast is safe because we verified the type above.
         return cast(BlockParserRuleLocalsT, self.local_attributes)
+
+    def expect_lookahead_matched(self) -> bool:
+        """
+        Return the pending lookahead result, which must be present.
+
+        This accessor retrieves the value of `lookahead_matched` delivered by a
+        `LOOKAHEAD_ANY_RULE_MATCHES` upcall. The field is guaranteed to be non-`None`
+        only after such an upcall and before the rule consumes it.
+
+        Returns:
+            `True` if the lookahead rule chain matched, `False` otherwise.
+
+        Raises:
+            RuntimeError: If `lookahead_matched` is `None`, meaning no lookahead result
+                is pending or it has already been consumed.
+        """
+        if self.lookahead_matched is None:
+            raise RuntimeError(
+                "No pending lookahead result (lookahead_matched is None)"
+            )
+        return self.lookahead_matched
+
+    def expect_has_interblock_blank_line(self) -> bool:
+        """
+        Return the pending interblock blank line flag, which must be present.
+
+        This accessor retrieves the value of `has_interblock_blank_line` delivered by a
+        `PARSE_NESTED_RESULT` upcall. The field is non-`None` only after a nested parse
+        completes and before the rule consumes the result.
+
+        Returns:
+            `True` if the nested region contained at least one inter-block blank line,
+            `False` otherwise.
+
+        Raises:
+            RuntimeError: If `has_interblock_blank_line` is `None`, meaning no nested
+                result is pending or it has already been consumed.
+        """
+        if self.has_interblock_blank_line is None:
+            raise RuntimeError(
+                "No pending nested parse result (has_interblock_blank_line is None)"
+            )
+        return self.has_interblock_blank_line
