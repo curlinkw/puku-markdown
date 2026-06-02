@@ -741,13 +741,8 @@ class BlockParserState:
 
             consumed_width += current_char_width
 
-        return ColnoWithResolution(
-            colno=start.colno + consumed_width,
-            resolution=ColnoResolution(
-                charno=end_charno,
-                char_width=0,
-                inner_colno=0,
-            ),
+        return ColnoWithResolution.at_zero_width_character_start(
+            colno=start.colno + consumed_width, charno=end_charno
         )
 
     def get_line_content(self, lineno: int, include_end: bool = False) -> str:
