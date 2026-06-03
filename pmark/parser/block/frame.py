@@ -81,6 +81,19 @@ class BlockParserFrame:
     can be detected explicitly by rules.
     """
 
+    has_any_rule_succeeded: bool = field(default=False)
+    """
+    Cumulative flag indicating that at least one rule in this frame's `rule_chain`
+    has successfully completed (i.e., emitted a `COMMIT_SUCCESS` command).
+
+    This flag is set by the parser machinery whenever a rule invocation within this
+    frame reaches a successful commit. It remains `True` for the lifetime of the frame,
+    regardless of subsequent rule failures or backtracking. The primary use case is
+    to distinguish *inter-block* blank lines from leading/trailing blank lines:
+    a blank line that appears *after* this flag has become `True` is considered an
+    inter-block blank line (see `has_interblock_blank_line`).
+    """
+
     @classmethod
     def from_spec(
         cls: type[Self],

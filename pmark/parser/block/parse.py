@@ -25,6 +25,7 @@ def _process_command(
 
     match command.kind:
         case BlockParserCommandKind.COMMIT_SUCCESS:
+            current_frame.has_any_rule_succeeded = True
             current_frame.reset_ruleno()
 
         case BlockParserCommandKind.COMMIT_REJECTION:
@@ -94,7 +95,6 @@ def _parse_through_next_applicable_rule(
     frames: list[BlockParserFrame],
     state: BlockParserState,
     current_frame: BlockParserFrame,
-    is_first_call_in_frame: bool,
 ) -> BlockParserCommand | None:
     """Parse until the next applicable rule, process it, and return its command.
 
@@ -150,7 +150,7 @@ def _parse_through_next_applicable_rule(
         )
         return None
 
-    if not is_first_call_in_frame:
+    if current_frame.has_any_rule_succeeded:
         current_frame.has_interblock_blank_line |= state.is_preceded_by_blank_line
 
     command = _process_rules_through_next_applicable(
@@ -198,7 +198,6 @@ def _parse_frame(
             frames=frames,
             state=state,
             current_frame=current_frame,
-            is_first_call_in_frame=True,
         )
         if command is None:
             return BlockParserUpcall(
@@ -213,7 +212,6 @@ def _parse_frame(
             frames=frames,
             state=state,
             current_frame=current_frame,
-            is_first_call_in_frame=False,
         )
     ) is not None:
         if command.kind in NESTING_COMMAND_KINDS:
