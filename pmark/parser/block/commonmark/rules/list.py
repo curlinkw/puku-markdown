@@ -193,6 +193,7 @@ def _lookahead_after_item_command(
     context: BlockParserRuleContext,
     local_attrs: ListLocals,
     end_lineno: int,
+    should_exit_transaction: bool,
 ) -> BlockParserCommand | None:
     # Item become loose if finish with empty line,
     # but we should filter last element, because it means list finish
@@ -207,7 +208,9 @@ def _lookahead_after_item_command(
     state.current_list_marker_indent_width = (
         local_attrs.persistent_list_marker_indent_width
     )
-    local_attrs.line_descriptors_editor.exit_transaction()
+
+    if should_exit_transaction:
+        local_attrs.line_descriptors_editor.exit_transaction()
 
     # Move to state.current_lineno
     local_attrs.current_lineno = state.current_lineno
@@ -329,6 +332,7 @@ def list_rule(
                 context=context,
                 local_attrs=local_attrs,
                 end_lineno=end_lineno,
+                should_exit_transaction=True,
             )
 
             if lookahead_command is not None:
@@ -477,6 +481,7 @@ def list_rule(
             context=context,
             local_attrs=local_attrs,
             end_lineno=end_lineno,
+            should_exit_transaction=False,
         )
 
         if lookahead_command is not None:
