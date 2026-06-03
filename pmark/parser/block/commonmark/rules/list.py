@@ -250,14 +250,6 @@ def list_rule(
     Link reference definition rule.
     """
 
-    if context.is_speculative_mode:
-        raise RuntimeError(
-            (
-                f"Internal parser error: list_rule is called in invalid context: "
-                f"speculative={context.is_speculative_mode}, "
-            )
-        )
-
     if not context.is_bound_to_production:
         start_lineno = context.line_span.start_lineno
         start_line_descriptor = state.line_descriptors[start_lineno]
@@ -289,6 +281,9 @@ def list_rule(
             )
         ) is None:
             return BlockParserCommand.with_commit_rejection_kind()
+
+        if context.is_speculative_mode:
+            return BlockParserCommand.with_commit_success_kind()
 
         after_marker_charno, list_kind = scanned_marker
 
