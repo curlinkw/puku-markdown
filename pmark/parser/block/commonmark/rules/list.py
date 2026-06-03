@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import replace
 
 from pmark.parser.block.state import BlockParserState
 from pmark.parser.block.frame_actuals import BlockParserFrameActuals
@@ -139,7 +139,6 @@ def list_rule_as_terminator(
         )
 
     if start_line_descriptor.is_lazy_continuation:
-        # must be handled in parent
         raise RuntimeError(
             f"Internal parser error: lazy continuation line {start_lineno} "
             "was not consumed by the previous block rule."
@@ -187,16 +186,59 @@ def list_rule_as_terminator(
     return BlockParserCommand.with_commit_success_kind()
 
 
-@dataclass(slots=True, frozen=True)
-class _AfterItemDirective:
-    should_terminate: bool | None = None
-    command: BlockParserCommand | None = None
-
-
-def _scan_after_item(
+def _lookahead_after_item_command(
+    state: BlockParserState,
+    inherited_attributes: BlockParserFrameActuals,
+    context: BlockParserRuleContext,
     local_attrs: ListLocals,
-) -> _AfterItemDirective:
-    pass
+    end_lineno: int,
+) -> BlockParserCommand | None:
+    # Item become loose if finish with empty line,
+    # but we should filter last element, because it means list finish
+    local_attrs.previous_item_has_trailing_blank = (
+        state.current_lineno > (local_attrs.current_item_start_lineno + 1)
+    ) and state.is_preceded_by_blank_line
+
+    # Rollback
+    state.current_block_indent_width = (
+        local_attrs.expect_persistent_block_indent_width()
+    )
+    state.current_list_marker_indent_width = (
+        local_attrs.persistent_list_marker_indent_width
+    )
+    local_attrs.line_descriptors_editor.exit_transaction()
+
+    # Move to state.current_lineno
+    local_attrs.current_lineno = state.current_lineno
+    local_attrs.current_item_start_lineno = state.current_lineno
+
+    if local_attrs.current_lineno >= end_lineno:
+        return None
+
+    if state.line_descriptors[local_attrs.current_lineno].is_lazy_continuation:
+        return None
+
+    if state.is_line_outdented(local_attrs.current_lineno):
+        return None
+
+    if state.meets_indented_code_block_indent(local_attrs.current_lineno):
+        return None
+
+    return BlockParserCommand(
+        kind=BlockParserCommandKind.LOOKAHEAD_ANY_RULE_MATCHES,
+        child_frame_spec=BlockParserFrameSpec(
+            line_span=LineSpan(
+                start_lineno=local_attrs.current_lineno, end_lineno=end_lineno
+            ),
+            rule_chain=BlockParserRuleChain.LIST_TERMINATION,
+            actuals=BlockParserFrameActuals(
+                parent_production=BlockParserRule.LIST,
+                block_stream=None,
+                continuation_line_limit=inherited_attributes.continuation_line_limit,
+            ),
+        ),
+        origin_rule_context=context,
+    )
 
 
 def list_rule(
@@ -274,12 +316,68 @@ def list_rule(
     match local_attrs.step:
         case _ListScanStep.INITIAL:
             pass
+        case _ListScanStep.AFTER_PARSE_NESTED:
+            if (
+                context.expect_has_interblock_blank_line()
+                or local_attrs.previous_item_has_trailing_blank
+            ):
+                local_attrs.is_tight = False
 
-    while local_attrs.current_lineno < end_lineno:
+            context.has_interblock_blank_line = None
+
+            lookahead_command = _lookahead_after_item_command(
+                state=state,
+                inherited_attributes=inherited_attributes,
+                context=context,
+                local_attrs=local_attrs,
+                end_lineno=end_lineno,
+            )
+
+            if lookahead_command is not None:
+                return lookahead_command
+
+            local_attrs.is_terminated = True
+
+        case _ListScanStep.AFTER_LOOKAHEAD:
+            if context.expect_lookahead_matched():
+                local_attrs.is_terminated = True
+
+            context.lookahead_matched = None
+
+            current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
+
+            match local_attrs.list_kind:
+                case ListKind.BULLET:
+                    after_marker_charno = _get_after_bullet_marker_charno(
+                        state=state,
+                        line_descriptor=current_line_descriptor,
+                    )
+
+                case ListKind.ORDERED:
+                    after_marker_charno = _get_after_ordered_marker_charno(
+                        state=state,
+                        line_descriptor=current_line_descriptor,
+                    )
+
+                case _:
+                    raise ValueError(f"Wrong {local_attrs.list_kind}")
+
+            if (after_marker_charno is None) or (
+                local_attrs.marker_char != state.source[after_marker_charno - 1]
+            ):
+                local_attrs.is_terminated = True
+
+    while (not local_attrs.is_terminated) and local_attrs.current_lineno < end_lineno:
         current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
         current_item_start_line_descriptor = state.line_descriptors[
             local_attrs.current_item_start_lineno
         ]
+
+        if current_line_descriptor.is_lazy_continuation:
+            raise RuntimeError(
+                f"Internal parser error: lazy continuation line {local_attrs.current_lineno} "
+                "was not consumed by the previous block rule."
+            )
 
         indented_marker_width = current_line_descriptor.current_content_indent_width + (
             local_attrs.current_after_marker_charno

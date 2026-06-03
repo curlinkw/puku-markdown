@@ -16,6 +16,9 @@ class BlockParserRuleChain(Enum):
     LINK_REFERENCE_DEFINITION_TERMINATION = auto()
     """Sequence of rules that determine when a `link reference definition` block terminates."""
 
+    LIST_TERMINATION = auto()
+    """Sequence of rules that determine when a `list` block terminates."""
+
     FULL_COMMONMARK_RULE_CHAIN = auto()
     """
     All CommonMark block rules.

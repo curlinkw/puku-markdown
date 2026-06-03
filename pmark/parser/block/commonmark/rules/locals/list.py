@@ -20,6 +20,8 @@ class ListLocals:
     current_item_start_lineno: int
     current_lineno: int
     line_descriptors_editor: TransactionalEditor[LineDescriptor]
+    is_tight: bool = True
+    is_terminated: bool = False
     previous_item_has_trailing_blank: bool = False
     persistent_block_indent_width: int | None = None
     persistent_list_marker_indent_width: int | None = None
