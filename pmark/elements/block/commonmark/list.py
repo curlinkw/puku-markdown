@@ -18,4 +18,5 @@ class ListItem:
 class List(BlockElement):
     kind: ListKind
     marker_char: str
+    is_tight: bool
     items: list[ListItem] = field(default_factory=list)

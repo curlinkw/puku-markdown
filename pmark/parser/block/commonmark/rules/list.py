@@ -201,15 +201,15 @@ def _lookahead_after_item_command(
         state.current_lineno > (local_attrs.current_item_start_lineno + 1)
     ) and state.is_preceded_by_blank_line
 
-    # Rollback
-    state.current_block_indent_width = (
-        local_attrs.expect_persistent_block_indent_width()
-    )
-    state.current_list_marker_indent_width = (
-        local_attrs.persistent_list_marker_indent_width
-    )
-
     if should_exit_transaction:
+        # Rollback
+        state.current_block_indent_width = (
+            local_attrs.expect_persistent_block_indent_width()
+        )
+        state.current_list_marker_indent_width = (
+            local_attrs.persistent_list_marker_indent_width
+        )
+
         local_attrs.line_descriptors_editor.exit_transaction()
 
     # Move to state.current_lineno
@@ -419,16 +419,6 @@ def list_rule(
         if after_marker_indent_width > INDENTED_CODE_BLOCK_MIN_INDENT:
             after_marker_indent_width = 1
 
-        local_attrs.persistent_list_marker_indent_width = (
-            state.current_list_marker_indent_width
-        )
-        state.current_list_marker_indent_width = state.current_block_indent_width
-
-        local_attrs.persistent_block_indent_width = state.current_block_indent_width
-        state.current_block_indent_width = (
-            after_marker_indent_width + indented_marker_width
-        )
-
         if (
             resolved_content_start.resolution.charno
             >= current_line_descriptor.line_end_charno
@@ -443,6 +433,16 @@ def list_rule(
             # ~~~~~~~~
             state.current_lineno = min(state.current_lineno + 2, end_lineno)
         else:
+            local_attrs.persistent_list_marker_indent_width = (
+                state.current_list_marker_indent_width
+            )
+            state.current_list_marker_indent_width = state.current_block_indent_width
+
+            local_attrs.persistent_block_indent_width = state.current_block_indent_width
+            state.current_block_indent_width = (
+                after_marker_indent_width + indented_marker_width
+            )
+
             local_attrs.line_descriptors_editor.enter_transaction()
 
             local_attrs.line_descriptors_editor[
@@ -473,6 +473,7 @@ def list_rule(
             )
 
         if local_attrs.previous_item_has_trailing_blank:
+            print(local_attrs.current_lineno)
             local_attrs.is_tight = False
 
         lookahead_command = _lookahead_after_item_command(
@@ -493,6 +494,7 @@ def list_rule(
     block = List(
         kind=local_attrs.list_kind,
         marker_char=local_attrs.marker_char,
+        is_tight=local_attrs.is_tight,
         items=local_attrs.block_items,
     )
 
