@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from pmark.elements.block.base import BlockElement
 
@@ -7,3 +7,13 @@ from pmark.elements.block.base import BlockElement
 class ListKind(Enum):
     BULLET = auto()
     ORDERED = auto()
+
+
+@dataclass(slots=True)
+class ListItem:
+    children: list[BlockElement] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class List(BlockElement):
+    items: list[ListItem] = field(default_factory=list)
