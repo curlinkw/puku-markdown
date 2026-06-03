@@ -334,6 +334,7 @@ def list_rule(
             )
 
             if lookahead_command is not None:
+                local_attrs.step = _ListScanStep.AFTER_LOOKAHEAD
                 return lookahead_command
 
             local_attrs.is_terminated = True
@@ -446,6 +447,8 @@ def list_rule(
                 current_content_indent_width=resolved_content_start.colno,
             )
 
+            local_attrs.step = _ListScanStep.AFTER_PARSE_NESTED
+
             return BlockParserCommand(
                 kind=BlockParserCommandKind.PARSE_NESTED,
                 child_frame_spec=BlockParserFrameSpec(
@@ -462,5 +465,22 @@ def list_rule(
                 ),
                 origin_rule_context=context,
             )
+
+        if local_attrs.previous_item_has_trailing_blank:
+            local_attrs.is_tight = False
+
+        lookahead_command = _lookahead_after_item_command(
+            state=state,
+            inherited_attributes=inherited_attributes,
+            context=context,
+            local_attrs=local_attrs,
+            end_lineno=end_lineno,
+        )
+
+        if lookahead_command is not None:
+            local_attrs.step = _ListScanStep.AFTER_LOOKAHEAD
+            return lookahead_command
+
+        local_attrs.is_terminated = True
 
     return BlockParserCommand.with_commit_rejection_kind()
