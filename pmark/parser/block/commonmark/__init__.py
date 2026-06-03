@@ -21,7 +21,10 @@ from pmark.parser.block.commonmark.rules.link_reference_definition import (
 from pmark.parser.block.commonmark.rules.paragraph import paragraph_rule
 from pmark.parser.block.commonmark.rules.setext_heading import setext_heading_rule
 from pmark.parser.block.commonmark.rules.thematic_break import thematic_break_rule
-from pmark.parser.block.commonmark.rules.list import list_rule
+from pmark.parser.block.commonmark.rules.list import (
+    list_rule,
+    list_rule_as_paragraph_terminator,
+)
 
 __all__ = [
     "HTML_BLOCK_RULES",
@@ -39,6 +42,7 @@ __all__ = [
     "indented_code_block_rule",
     "link_reference_definition_rule",
     "list_rule",
+    "list_rule_as_paragraph_terminator",
     "paragraph_rule",
     "setext_heading_rule",
     "thematic_break_rule",

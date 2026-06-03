@@ -50,11 +50,6 @@ def _try_consume_blockquote_prefix(
             current_content_indent_width=0,
             current_content_start_charno=after_marker_charno,
         )
-        logger.debug(
-            "Updated line descriptor for line %r: %r",
-            lineno,
-            line_descriptors_editor[lineno],
-        )
         return True
 
     # Invariant:
@@ -112,12 +107,6 @@ def _try_consume_blockquote_prefix(
         current_content_start_charno=content_start_charno,
     )
 
-    logger.debug(
-        "Updated line descriptor for line %r: %r",
-        lineno,
-        line_descriptors_editor[lineno],
-    )
-
     return True
 
 
@@ -145,15 +134,9 @@ def blockquote_rule(
             )
 
         if state.meets_indented_code_block_indent(start_lineno):
-            logger.debug(
-                "Rejected blockquote_rule because of `meets_indented_code_block_indent`"
-            )
             return BlockParserCommand.with_commit_rejection_kind()
 
         if state.is_content_start_beyond_source(start_lineno):
-            logger.debug(
-                "Rejected blockquote_rule because of `is_content_start_beyond_source`"
-            )
             return BlockParserCommand.with_commit_rejection_kind()
 
         if (
@@ -162,10 +145,6 @@ def blockquote_rule(
             ]
             != GREATER_THAN_CHARACTER
         ):
-            logger.debug(
-                "Rejected blockquote_rule because of `wrong marker`. With line descriptor: %r",
-                state.line_descriptors[start_lineno],
-            )
             return BlockParserCommand.with_commit_rejection_kind()
 
         if context.is_speculative_mode:
@@ -214,8 +193,6 @@ def blockquote_rule(
     if context.lookahead_matched is None:
         pass
     elif context.lookahead_matched:
-        logger.debug("Set continuation_line_limit=%r", local_attrs.current_lineno)
-
         local_attrs.is_terminated = True
         local_attrs.continuation_line_limit = local_attrs.current_lineno
 
@@ -228,22 +205,10 @@ def blockquote_rule(
                     - state.current_block_indent_width
                 ),
             )
-
-            logger.debug(
-                "Updated line descriptor for line %r: %r",
-                local_attrs.current_lineno,
-                local_attrs.line_descriptors_editor[local_attrs.current_lineno],
-            )
     else:
         current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
         local_attrs.line_descriptors_editor[local_attrs.current_lineno] = replace(
             current_line_descriptor, is_lazy_continuation=True
-        )
-
-        logger.debug(
-            "Updated line descriptor for line %r: %r",
-            local_attrs.current_lineno,
-            local_attrs.line_descriptors_editor[local_attrs.current_lineno],
         )
 
         local_attrs.current_lineno += 1
@@ -254,10 +219,6 @@ def blockquote_rule(
         local_attrs.current_lineno < context.line_span.end_lineno
     ):
         if state.is_blank_line(local_attrs.current_lineno):
-            logger.debug(
-                "Blockquote is terminated because of `blank_line` at line %r",
-                local_attrs.current_lineno,
-            )
             break
 
         if not state.is_line_outdented(local_attrs.current_lineno):
@@ -266,10 +227,6 @@ def blockquote_rule(
                 line_descriptors_editor=local_attrs.line_descriptors_editor,
                 lineno=local_attrs.current_lineno,
             ):
-                logger.debug(
-                    "_try_consume_blockquote_prefix success at line %r",
-                    local_attrs.current_lineno,
-                )
                 local_attrs.prev_marked_line_was_empty |= state.is_blank_line(
                     local_attrs.current_lineno
                 )
@@ -277,15 +234,7 @@ def blockquote_rule(
                 continue
 
         if local_attrs.prev_marked_line_was_empty:
-            logger.debug(
-                "Blockquote is terminated because of `prev_marked_line_was_empty` at line %r",
-                local_attrs.current_lineno,
-            )
             break
-
-        logger.debug(
-            "Blockquote checks for termination at line %r", local_attrs.current_lineno
-        )
 
         return BlockParserCommand(
             kind=BlockParserCommandKind.LOOKAHEAD_ANY_RULE_MATCHES,

@@ -50,10 +50,6 @@ def paragraph_rule(
         if context.lookahead_matched:
             local_attrs.is_terminated = True
         else:
-            logger.debug(
-                "Line %r is consumed via paragraph_rule (not matched)",
-                local_attrs.current_lineno,
-            )
             local_attrs.current_lineno += 1
         context.lookahead_matched = None
 
@@ -64,18 +60,10 @@ def paragraph_rule(
             break
 
         if state.line_descriptors[local_attrs.current_lineno].is_lazy_continuation:
-            logger.debug(
-                "Line %r is consumed via paragraph_rule (is_lazy_continuation)",
-                local_attrs.current_lineno,
-            )
             local_attrs.current_lineno += 1
             continue
 
         if state.meets_indented_code_block_indent(local_attrs.current_lineno):
-            logger.debug(
-                "Line %r is consumed via paragraph_rule (meets_indented_code_block_indent)",
-                local_attrs.current_lineno,
-            )
             local_attrs.current_lineno += 1
             continue
 

@@ -1,9 +1,9 @@
 from enum import Enum, auto
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from pmark.persistent_list.transactional_editor import TransactionalEditor
 from pmark.parser.block.line_descriptor import LineDescriptor
-from pmark.elements.block.commonmark.list import ListKind
+from pmark.elements.block.commonmark.list import ListKind, ListItem
 
 
 class _ListScanStep(Enum):
@@ -26,6 +26,7 @@ class ListLocals:
     persistent_block_indent_width: int | None = None
     persistent_list_marker_indent_width: int | None = None
     step: _ListScanStep = _ListScanStep.INITIAL
+    block_items: list[ListItem] = field(default_factory=list)
 
     def expect_persistent_block_indent_width(self) -> int:
         """Return the persistent block indent width.

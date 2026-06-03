@@ -16,4 +16,6 @@ class ListItem:
 
 @dataclass(slots=True)
 class List(BlockElement):
+    kind: ListKind
+    marker_char: str
     items: list[ListItem] = field(default_factory=list)

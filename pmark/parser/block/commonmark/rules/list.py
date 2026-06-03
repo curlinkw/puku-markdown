@@ -9,9 +9,10 @@ from pmark.parser.block.commonmark.rules.locals.list import ListLocals, _ListSca
 from pmark.parser.block.frame_spec import BlockParserFrameSpec
 from pmark.parser.block.line_descriptor import LineDescriptor
 from pmark.parser.block.rule_chain import BlockParserRuleChain
+from pmark.parser.block.block_stream import BlockParserBlockStream
 from pmark.line_span import LineSpan
 from pmark.persistent_list.transactional_editor import TransactionalEditor
-from pmark.elements.block.commonmark.list import ListKind
+from pmark.elements.block.commonmark.list import ListKind, List, ListItem
 from pmark.column_resolution import ColnoWithResolution
 from pmark._utils.predicates import is_space_or_tab, is_ascii_digit
 from pmark._utils.constants import (
@@ -117,7 +118,7 @@ def _scan_marker(
     return None
 
 
-def list_rule_as_terminator(
+def list_rule_as_paragraph_terminator(
     state: BlockParserState,
     inherited_attributes: BlockParserFrameActuals,
     context: BlockParserRuleContext,
@@ -287,12 +288,14 @@ def list_rule(
 
         after_marker_charno, list_kind = scanned_marker
 
+        marker_char = state.source[after_marker_charno - 1]
+
         context.bind_production(
             production=BlockParserRule.LIST,
             local_attributes=ListLocals(
                 list_kind=list_kind,
                 current_after_marker_charno=after_marker_charno,
-                marker_char=state.source[after_marker_charno - 1],
+                marker_char=marker_char,
                 current_item_start_lineno=start_lineno,
                 current_lineno=start_lineno,
                 line_descriptors_editor=TransactionalEditor[LineDescriptor](
@@ -362,12 +365,16 @@ def list_rule(
                 local_attrs.marker_char != state.source[after_marker_charno - 1]
             ):
                 local_attrs.is_terminated = True
+            else:
+                local_attrs.current_after_marker_charno = after_marker_charno
 
     while (not local_attrs.is_terminated) and local_attrs.current_lineno < end_lineno:
         current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
         current_item_start_line_descriptor = state.line_descriptors[
             local_attrs.current_item_start_lineno
         ]
+        block_item = ListItem()
+        local_attrs.block_items.append(block_item)
 
         if current_line_descriptor.is_lazy_continuation:
             raise RuntimeError(
@@ -454,7 +461,7 @@ def list_rule(
                     rule_chain=BlockParserRuleChain.FULL_COMMONMARK_RULE_CHAIN,
                     actuals=BlockParserFrameActuals(
                         parent_production=BlockParserRule.LIST,
-                        block_stream=None,
+                        block_stream=BlockParserBlockStream(block_item.children.append),
                         continuation_line_limit=inherited_attributes.continuation_line_limit,
                     ),
                 ),
@@ -478,4 +485,12 @@ def list_rule(
 
         local_attrs.is_terminated = True
 
-    return BlockParserCommand.with_commit_rejection_kind()
+    block = List(
+        kind=local_attrs.list_kind,
+        marker_char=local_attrs.marker_char,
+        items=local_attrs.block_items,
+    )
+
+    inherited_attributes.expect_block_stream()(block)
+
+    return BlockParserCommand.with_commit_success_kind()
