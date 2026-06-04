@@ -79,13 +79,9 @@ def _html_rule_impl(
     start_lineno = context.line_span.start_lineno
     start_line_descriptor = state.line_descriptors[start_lineno]
 
-    if start_line_descriptor.is_lazy_continuation:
-        raise RuntimeError(
-            f"Internal parser error: lazy continuation line {start_lineno} "
-            "was not consumed by the previous block rule."
-        )
-
-    if state.meets_indented_code_block_indent(start_lineno):
+    if (
+        not start_line_descriptor.is_lazy_continuation
+    ) and state.meets_indented_code_block_indent(start_lineno):
         return BlockParserCommand.with_commit_rejection_kind()
 
     start_line_content = state.source[
@@ -97,6 +93,12 @@ def _html_rule_impl(
 
     if open_re.search(start_line_content) is None:
         return BlockParserCommand.with_commit_rejection_kind()
+
+    if start_line_descriptor.is_lazy_continuation:
+        raise RuntimeError(
+            f"Internal parser error: lazy continuation line {start_lineno} "
+            "was not consumed by the previous block rule."
+        )
 
     if context.is_speculative_mode:
         return BlockParserCommand.with_commit_success_kind()

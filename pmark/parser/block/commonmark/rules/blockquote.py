@@ -127,13 +127,9 @@ def blockquote_rule(
     if not context.is_bound_to_production:
         start_lineno = context.line_span.start_lineno
 
-        if state.line_descriptors[start_lineno].is_lazy_continuation:
-            raise RuntimeError(
-                f"Internal parser error: lazy continuation line {start_lineno} "
-                "was not consumed by the previous block rule."
-            )
-
-        if state.meets_indented_code_block_indent(start_lineno):
+        if (
+            not state.line_descriptors[start_lineno].is_lazy_continuation
+        ) and state.meets_indented_code_block_indent(start_lineno):
             return BlockParserCommand.with_commit_rejection_kind()
 
         if state.is_content_start_beyond_source(start_lineno):
@@ -146,6 +142,12 @@ def blockquote_rule(
             != GREATER_THAN_CHARACTER
         ):
             return BlockParserCommand.with_commit_rejection_kind()
+
+        if state.line_descriptors[start_lineno].is_lazy_continuation:
+            raise RuntimeError(
+                f"Internal parser error: lazy continuation line {start_lineno} "
+                "was not consumed by the previous block rule."
+            )
 
         if context.is_speculative_mode:
             return BlockParserCommand.with_commit_success_kind()

@@ -70,13 +70,9 @@ def atx_heading_rule(
     start_lineno = context.line_span.start_lineno
     start_line_descriptor = state.line_descriptors[start_lineno]
 
-    if start_line_descriptor.is_lazy_continuation:
-        raise RuntimeError(
-            f"Internal parser error: lazy continuation line {start_lineno} "
-            "was not consumed by the previous block rule."
-        )
-
-    if state.meets_indented_code_block_indent(start_lineno):
+    if (
+        not start_line_descriptor.is_lazy_continuation
+    ) and state.meets_indented_code_block_indent(start_lineno):
         return BlockParserCommand.with_commit_rejection_kind()
 
     if start_line_descriptor.is_blank:
@@ -106,6 +102,12 @@ def atx_heading_rule(
     # Invariant:
     # after_markup_charno = line_end_charno, or
     # state.source[after_markup_charno] is space or tab
+
+    if start_line_descriptor.is_lazy_continuation:
+        raise RuntimeError(
+            f"Internal parser error: lazy continuation line {start_lineno} "
+            "was not consumed by the previous block rule."
+        )
 
     if context.is_speculative_mode:
         return BlockParserCommand.with_commit_success_kind()

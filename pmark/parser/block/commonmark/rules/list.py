@@ -315,18 +315,14 @@ def list_rule(
         start_lineno = context.line_span.start_lineno
         start_line_descriptor = state.line_descriptors[start_lineno]
 
-        if start_line_descriptor.is_lazy_continuation:
-            # must be handled in parent
-            raise RuntimeError(
-                f"Internal parser error: lazy continuation line {start_lineno} "
-                "was not consumed by the previous block rule."
-            )
-
-        if state.meets_indented_code_block_indent(start_lineno):
+        if (
+            not start_line_descriptor.is_lazy_continuation
+        ) and state.meets_indented_code_block_indent(start_lineno):
             return BlockParserCommand.with_commit_rejection_kind()
 
         if (
-            (state.current_list_marker_indent_width is not None)
+            (not start_line_descriptor.is_lazy_continuation)
+            and (state.current_list_marker_indent_width is not None)
             and state.meets_indented_code_block_indent(
                 lineno=start_lineno, relative_to_current_list_marker=True
             )
@@ -342,6 +338,12 @@ def list_rule(
             )
         ) is None:
             return BlockParserCommand.with_commit_rejection_kind()
+
+        if start_line_descriptor.is_lazy_continuation:
+            raise RuntimeError(
+                f"Internal parser error: lazy continuation line {start_lineno} "
+                "was not consumed by the previous block rule."
+            )
 
         if context.is_speculative_mode:
             return BlockParserCommand.with_commit_success_kind()
@@ -506,7 +508,6 @@ def list_rule(
             )
 
         if local_attrs.previous_item_has_trailing_blank:
-            print(local_attrs.current_lineno)
             local_attrs.is_tight = False
 
         lookahead_command = _lookahead_after_item_command(
