@@ -84,9 +84,12 @@ class BlockParserState:
                     else:
                         in_leading_whitespaces = False
 
-                if (
-                    is_last_character := (position + 1 >= source_length)
-                ) or character == LINE_FEED_CHARACTER:
+                if (is_line_feed := (character == LINE_FEED_CHARACTER)) or (
+                    position + 1 >= source_length
+                ):
+                    if not is_line_feed:
+                        position += 1
+
                     line_descriptors_editor.append(
                         LineDescriptor(
                             line_start_charno=current_line_start_charno,
@@ -95,9 +98,7 @@ class BlockParserState:
                             current_content_indent_width=current_indent_width,
                             current_content_start_charno=current_line_start_charno
                             + current_indent_length,
-                            line_end_charno=(
-                                source_length if is_last_character else position
-                            ),
+                            line_end_charno=position,
                         )
                     )
 
@@ -412,34 +413,39 @@ class BlockParserState:
         Return the concatenated content of a block of lines, with marker prefixes removed
         and content indent reduced by a given width on each line.
 
-        For each line in the span (from `line_span.start_lineno` inclusive to
-        `line_span.end_lineno` exclusive), this method calls `indent_reduced_line_content`
-        with the specified `reduction_width` and `keep_trailing_newline`, then joins the
-        results into a single string. The reduction width applies to the content indent
-        of every line individually.
+        For each line in the span, this method calls `indent_reduced_line_content` with
+        the specified `reduction_width`. The reduction applies to the content indent of
+        every line individually.
+
+        Trailing newline handling:
+        - Every line **except the last** always keeps its trailing newline, so that the
+        concatenated block maintains line breaks between lines.
+        - The **last line** keeps its trailing newline only when *keep_trailing_newline*
+        is ``True``.  If ``False``, the final newline is omitted.
 
         Args:
             line_span: A `LineSpan` defining the contiguous range of lines to process.
-                The span is half-open: `[start_lineno, end_lineno)`.
+                The span is half-open: ``[start_lineno, end_lineno)``.
             reduction_width: Number of visual columns to reduce the content indent by on
-                each line. Must be <= each line's `current_content_indent_width`.
-            keep_trailing_newline: If `True`, the trailing newline of each line is included
-                in that line's result. If `False`, newlines are omitted from all lines
-                (resulting in a single concatenated string without line breaks).
+                each line. Must be ≤ each line's ``current_content_indent_width``.
+            keep_trailing_newline: If ``True``, the last line's trailing newline is
+                included; if ``False``, it is omitted. Does **not** affect non-last lines.
 
         Returns:
             A single string formed by concatenating the processed content of all lines
-            in the specified range.
+            in the specified range. The result contains newlines between lines, and a
+            trailing newline is present only if *keep_trailing_newline* is ``True``.
 
         Raises:
-            ValueError: If `reduction_width` exceeds the `current_content_indent_width`
+            ValueError: If *reduction_width* exceeds the ``current_content_indent_width``
                 of any line in the span. The error message identifies the problematic line.
         """
         return "".join(
             self.indent_reduced_line_content(
                 lineno=lineno,
                 reduction_width=reduction_width,
-                keep_trailing_newline=keep_trailing_newline,
+                keep_trailing_newline=(lineno + 1 < line_span.end_lineno)
+                or keep_trailing_newline,
             )
             for lineno in range(line_span.start_lineno, line_span.end_lineno)
         )

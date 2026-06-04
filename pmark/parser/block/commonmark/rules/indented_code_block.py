@@ -58,7 +58,8 @@ def indented_code_block_rule(
 
         break
 
-    state.current_lineno = current_lineno
+    state.current_lineno = last_lineno
+
     block = IndentedCodeBlock(
         content=state.indent_reduced_block_content(
             line_span=LineSpan(
