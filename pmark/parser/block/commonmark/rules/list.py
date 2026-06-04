@@ -20,6 +20,7 @@ from pmark._utils.constants import (
     BULLET_LIST_MARKERS,
     ORDERED_LIST_MARKER_DELIMITERS,
     INDENTED_CODE_BLOCK_MIN_INDENT,
+    MAX_ORDERED_LIST_MARKER_DIGITS,
 )
 
 
@@ -72,7 +73,11 @@ def _get_after_ordered_marker_charno(
         (
             current_charno
             for current_charno in range(
-                marker_number_start_charno + 1, line_descriptor.line_end_charno
+                marker_number_start_charno + 1,
+                min(
+                    line_descriptor.line_end_charno,
+                    marker_number_start_charno + (MAX_ORDERED_LIST_MARKER_DIGITS + 1),
+                ),
             )
             if not is_ascii_digit(state.source[current_charno])
         ),
@@ -84,6 +89,11 @@ def _get_after_ordered_marker_charno(
     ):
         return None
 
+    if (
+        marker_delimiter_charno - marker_number_start_charno
+    ) > MAX_ORDERED_LIST_MARKER_DIGITS:
+        return None
+
     after_marker_charno = marker_delimiter_charno + 1
 
     if after_marker_charno < line_descriptor.line_end_charno and (
@@ -93,7 +103,7 @@ def _get_after_ordered_marker_charno(
 
     marker_number = int(
         state.source[
-            line_descriptor.current_content_start_charno : after_marker_charno - 1
+            line_descriptor.current_content_start_charno : marker_delimiter_charno
         ]
     )
 

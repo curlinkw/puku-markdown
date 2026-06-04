@@ -299,3 +299,17 @@ Use this constant instead of the literal `""` when the empty string serves as
 a default value, a placeholder, or a well-known marker in public APIs or
 repeated logic. This improves readability and centralises the concept.
 """
+
+MAX_ORDERED_LIST_MARKER_DIGITS: int = 9
+"""
+The maximum number of digits permitted in an ordered list marker.
+
+The CommonMark Spec (0.30+) limits ordered list markers (e.g., '1.', '999999999.')
+to at most 9 digits. This limit prevents integer overflows in browsers that use
+signed 32-bit integers for list indexing.
+
+Any marker exceeding this length (e.g., '1000000000.') is invalid and must not
+be recognized as a list marker by a conforming implementation.
+
+Source: CommonMark Spec 0.30, Section 5.2 - List Items.
+"""
