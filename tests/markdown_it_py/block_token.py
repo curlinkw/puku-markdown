@@ -16,6 +16,7 @@ from pmark.elements import (
     ThematicBreak,
     SetextHeading,
     Paragraph,
+    LinkReferenceDefinition,
     Document,
 )
 
@@ -121,7 +122,7 @@ class BlockToken:
                     return cls(
                         kind=BlockTokenKind.THEMATIC_BREAK,
                         polarity=BlockTokenPolarity.SELF_CLOSING,
-                        payload=MarkupPayload(markup=token.markup),
+                        payload=MarkupPayload(markup=token.markup[:-1]),
                     )
                 case "html_block":
                     return cls(
@@ -161,7 +162,8 @@ class BlockToken:
                         kind=BlockTokenKind.LIST_ITEM,
                         polarity=BlockTokenPolarity.OPEN,
                         payload=ListPayload(
-                            markup=token.markup, marker_number=int(token.info)
+                            markup=token.markup,
+                            marker_number=(None if not token.info else int(token.info)),
                         ),
                     )
                 case "list_item_close":
@@ -352,6 +354,9 @@ class BlockToken:
                         payload=ContentPayload(content=block.content),
                     )
                 ]
+
+            case LinkReferenceDefinition():
+                return []
 
             case _:
                 raise ValueError(f"Unknown type: {type(block)}")

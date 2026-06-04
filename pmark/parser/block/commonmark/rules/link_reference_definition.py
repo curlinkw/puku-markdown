@@ -179,6 +179,7 @@ def _skip_whitespace_with_continuation(
                 )
 
             local_attrs.current_charno += 1
+            continue
         else:
             break
 
@@ -308,6 +309,8 @@ def _scan_title(
         local_attrs.content_buffer[local_attrs.current_charno] != LINE_FEED_CHARACTER
     ):
         return BlockParserCommand.with_commit_rejection_kind()
+
+    state.current_lineno = local_attrs.current_lineno
 
     return BlockParserCommand.with_commit_success_kind()
 
