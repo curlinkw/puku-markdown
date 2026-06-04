@@ -1,8 +1,9 @@
 # puku-markdown
 
 [![PyPI version](https://img.shields.io/pypi/v/puku-markdown.svg)](https://pypi.org/project/puku-markdown/)
-[![Python >=3.12](https://img.shields.io/badge/python-≥3.12-blue.svg)](https://www.python.org/downloads/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/puku-markdown.svg)](https://pypi.org/project/puku-markdown/)
 [![Test Status](https://github.com/curlinkw/puku-markdown/actions/workflows/pytest.yaml/badge.svg)](https://github.com/curlinkw/puku-markdown/actions/workflows/pytest.yaml)
+[![License](https://img.shields.io/github/license/curlinkw/puku-markdown.svg)](https://github.com/curlinkw/puku-markdown/blob/main/LICENSE)
 
 A **CommonMark‑compliant** Markdown parser for block elements, written in pure Python with an **explicit stack** – no recursion, no hidden state, and a strong focus on readability and maintainability. Requires **Python 3.12 or higher**.
 
