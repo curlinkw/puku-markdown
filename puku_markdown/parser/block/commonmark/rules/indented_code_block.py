@@ -1,0 +1,82 @@
+from puku_markdown.parser.block.state import BlockParserState
+from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
+from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown.parser.block.command import BlockParserCommand
+from puku_markdown.parser.block.logger import logger
+from puku_markdown.elements.block.commonmark.indented_code_block import (
+    IndentedCodeBlock,
+)
+from puku_markdown.line_span import LineSpan
+from puku_markdown._utils.constants import (
+    INDENTED_CODE_BLOCK_MIN_INDENT,
+    LINE_FEED_CHARACTER,
+)
+
+
+def indented_code_block_rule(
+    state: BlockParserState,
+    inherited_attributes: BlockParserFrameActuals,
+    context: BlockParserRuleContext,
+) -> BlockParserCommand:
+    """
+    Indented code block rule.
+
+    This rule is *terminal* - it never suspends or yields. It either succeeds
+    (`COMMIT_SUCCESS`) or rejects (`COMMIT_REJECTION`) in the same
+    call. It has no locals (no internal parsing state to resume) and does not
+    bind `context` to any production, because no recursive descent is needed.
+
+    Invariants:
+        - No recursive calls to other rules.
+        - No use of `context.locals` (no suspension points).
+        - Returns only `COMMIT_SUCCESS` or `COMMIT_REJECTION` command kinds.
+    """
+    logger.debug(
+        "Entered into indented_code_block_rule at state.current_lineno=%r; line_span=%r",
+        state.current_lineno,
+        context.line_span,
+    )
+
+    if state.line_descriptors[context.line_span.start_lineno].is_lazy_continuation:
+        return BlockParserCommand.with_commit_rejection_kind()
+
+    if not state.meets_indented_code_block_indent(context.line_span.start_lineno):
+        return BlockParserCommand.with_commit_rejection_kind()
+
+    if context.is_speculative_mode:
+        return BlockParserCommand.with_commit_success_kind()
+
+    last_lineno = current_lineno = context.line_span.start_lineno + 1
+
+    while current_lineno < context.line_span.end_lineno:
+        if state.is_blank_line(current_lineno):
+            current_lineno += 1
+            continue
+
+        if state.line_descriptors[current_lineno].is_lazy_continuation:
+            break
+
+        if state.meets_indented_code_block_indent(current_lineno):
+            current_lineno += 1
+            last_lineno = current_lineno
+            continue
+
+        break
+
+    state.current_lineno = last_lineno
+
+    block = IndentedCodeBlock(
+        content=state.indent_reduced_block_content(
+            line_span=LineSpan(
+                start_lineno=context.line_span.start_lineno, end_lineno=last_lineno
+            ),
+            reduction_width=INDENTED_CODE_BLOCK_MIN_INDENT
+            + state.current_block_indent_width,
+            keep_trailing_newline=False,
+        )
+        + LINE_FEED_CHARACTER,
+    )
+
+    inherited_attributes.expect_block_stream()(block)
+
+    return BlockParserCommand.with_commit_success_kind()

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from itertools import chain
 from markdown_it.token import Token as MarkdownItPyToken
 
-from pmark.elements import (
+from puku_markdown.elements import (
     BlockElement,
     AtxHeading,
     Blockquote,
