@@ -7,7 +7,11 @@ from pmark.line_span import LineSpan
 from pmark.elements import Document
 from pmark._utils.metrics import commonmark_char_width
 from pmark._utils.predicates import is_space_or_tab
-from pmark._utils.constants import INDENTED_CODE_BLOCK_MIN_INDENT, LINE_FEED_CHARACTER
+from pmark._utils.constants import (
+    INDENTED_CODE_BLOCK_MIN_INDENT,
+    LINE_FEED_CHARACTER,
+    EMPTY_STRING,
+)
 
 
 @dataclass(slots=True)
@@ -248,44 +252,31 @@ class BlockParserState:
         lineno: int,
         start: ColnoWithResolution,
         column_offset: int,
-        keep_trailing_newline: bool,
-    ) -> ColnoResolution:
-        """
-        Resolve a visual column offset forward from a given resolved column position.
+        end_charno: int,
+    ) -> ColnoWithResolution:
+        """Advance `column_offset` columns from `start` within line `lineno`, bounded by `end_charno`.
 
-        Starting from `start` (which contains both the absolute column number and its
-        character-level resolution), this method moves `column_offset` visual columns
-        to the right within the specified line. It returns the new character-level
-        resolution (`ColnoResolution`) at the target position.
-
-        The offset is applied purely in visual space, handling tab expansion correctly.
-        If the offset lands exactly on a character boundary (`inner_colno == 0`), the
-        returned resolution points to the start of the next character. If the offset
-        lands exactly at the end of the line (or at the end of the newline when
-        `keep_trailing_newline` is `True`), a sentinel `ColnoResolution` is returned
-        with `charno` set to the end index, `char_width = 0`, and `inner_colno = 0`.
-        This sentinel represents a virtual position after all line content.
+        The start position may be inside a multi-column character. Character widths are determined by
+        `commonmark_char_width()`. The search stops at or before `end_charno` (exclusive).
 
         Args:
-            lineno: Zero-based line index within the document.
-            start: A resolved column position (input + resolution) marking the start.
-            column_offset: Number of visual columns to move forward. Must be >= 0.
-            keep_trailing_newline: If `True`, the line's trailing newline character is
-                considered part of the line and can be landed on. If `False`, the newline
-                is excluded and the method stops at the last visible character.
+            lineno: 0-based line index.
+            start: Starting position (may have non-zero `inner_colno`).
+            column_offset: Non-negative number of columns to move forward.
+            end_charno: Exclusive upper bound on character indices to consider.
 
         Returns:
-            A `ColnoResolution` representing the character and inner offset at the
-            target visual column. If the target is exactly at the end of the line
-            (including the newline when allowed), returns a sentinel resolution with
-            `char_width = 0` and `inner_colno = 0`.
+            If the offset is exhausted before reaching `end_charno`:
+                A `ColnoWithResolution` with `colno = start.colno + column_offset` and a
+                `resolution` pointing to the exact character (possibly mid-character).
+            If the offset reaches or would pass `end_charno`:
+                `ColnoWithResolution.at_zero_width_character_start(
+                    colno=start.colno + column_offset, charno=end_charno)`.
 
         Raises:
-            ValueError: If `column_offset` is negative, or if `start.resolution.charno`
-                lies outside the character range of line `lineno`.
-            RuntimeError: If `column_offset` exceeds the total visual length of the
-                line (including the newline when allowed) - current_charno.e., if the offset goes
-                beyond the sentinel end position.
+            ValueError: `column_offset` is negative.
+            ValueError: `start.resolution.charno` lies outside the character index
+                range of line `lineno` according to `self.line_descriptors[lineno]`.
         """
         if column_offset < 0:
             raise ValueError(
@@ -293,6 +284,7 @@ class BlockParserState:
             )
 
         line_descriptor = self.line_descriptors[lineno]
+        resolved_colno = start.colno + column_offset
 
         if not (
             line_descriptor.line_start_charno
@@ -305,16 +297,16 @@ class BlockParserState:
             )
 
         if start.resolution.remaining_columns > column_offset:
-            return ColnoResolution(
-                charno=start.resolution.charno,
-                char_width=start.resolution.char_width,
-                inner_colno=start.resolution.inner_colno + column_offset,
+            return ColnoWithResolution(
+                colno=resolved_colno,
+                resolution=ColnoResolution(
+                    charno=start.resolution.charno,
+                    char_width=start.resolution.char_width,
+                    inner_colno=start.resolution.inner_colno + column_offset,
+                ),
             )
 
         current_column_offset = start.resolution.remaining_columns
-        end_charno = line_descriptor.line_end_charno + (
-            1 if keep_trailing_newline else 0
-        )
 
         for current_charno in range(
             start.resolution.charno + 1,
@@ -328,63 +320,52 @@ class BlockParserState:
             remaining_offset = column_offset - current_column_offset
 
             if current_char_width > remaining_offset:
-                return ColnoResolution(
-                    charno=current_charno,
-                    char_width=current_char_width,
-                    inner_colno=remaining_offset,
+                return ColnoWithResolution(
+                    colno=resolved_colno,
+                    resolution=ColnoResolution(
+                        charno=current_charno,
+                        char_width=current_char_width,
+                        inner_colno=remaining_offset,
+                    ),
                 )
 
             current_column_offset += current_char_width
 
-        if current_column_offset < column_offset:
-            raise RuntimeError(
-                f"Column offset {column_offset} from start colno {start.colno} "
-                f"exceeds line {lineno} capacity {current_column_offset}"
-            )
-
-        return ColnoResolution(charno=end_charno, char_width=0, inner_colno=0)
+        return ColnoWithResolution.at_zero_width_character_start(
+            colno=resolved_colno, charno=end_charno
+        )
 
     def indent_reduced_line_content(
         self, lineno: int, reduction_width: int, keep_trailing_newline: bool
     ) -> str:
-        """
-        Return the line content after removing the marker prefix and reducing the content indent.
+        """Return the content of line `lineno` with its indentation reduced by `reduction_width` columns.
 
-        This method strips the entire marker prefix (including any leading spaces before the
-        marker and the marker itself) from the line, and then reduces the remaining content
-        indent by `reduction_width` visual columns. The reduction is applied from the left
-        edge of the content indent area; if the reduction lands inside a tab character, that
-        tab is partially expanded to spaces to preserve exact visual alignment.
+        The reduction applies to the whitespace following `current_after_marker_charno`.
+        If `reduction_width` exceeds the available columns before `current_content_start_charno`,
+        the result starts at `current_content_start_charno`. If the line has no content
+        (i.e., `current_after_marker_charno >= line_end_charno`), returns either
+        `LINE_FEED_CHARACTER` or `EMPTY_STRING` according to `keep_trailing_newline`.
 
         Args:
-            lineno: Zero-based line index within the document.
-            reduction_width: Number of visual columns to reduce the content indent by.
-                Must be less than or equal to the line's `current_content_indent_width`.
-            keep_trailing_newline: If `True`, the returned string includes the line's
-                trailing newline character; otherwise it ends before the newline.
+            lineno: 0-based line index.
+            reduction_width: Number of columns to remove; must be non-negative.
+            keep_trailing_newline: If True, include the trailing newline character
+                (i.e., extend the slice to `line_end_charno + 1`).
 
         Returns:
-            The line content starting after the removed marker prefix and the reduced content
-            indent. If the reduction lands exactly on a character boundary, the returned
-            string starts at that character; if it lands inside a tab, the tab is replaced by
-            the appropriate number of spaces to fill the reduced portion, and the remaining
-            part of the tab (if any) is kept as part of the output.
-
-        Raises:
-            ValueError: If `reduction_width` is greater than the line's
-                `current_content_indent_width`. The error message includes the actual values.
+            A string from the adjusted start position (after reduction) to
+            `line_end_charno` (or `+1` if `keep_trailing_newline`). If the reduction
+            lands inside a multi-column character, spaces are inserted to align
+            (`" " * remaining_columns`), followed by the rest of the line from the
+            next character.
         """
-
         line_descriptor = self.line_descriptors[lineno]
-        end_charno = line_descriptor.line_end_charno + (
-            1 if keep_trailing_newline else 0
-        )
 
-        if line_descriptor.current_content_indent_width < reduction_width:
-            raise ValueError(
-                f"Cannot reduce content indent by {reduction_width} columns on line {lineno}: "
-                f"current content indent width is only {line_descriptor.current_content_indent_width}"
-            )
+        if (
+            line_descriptor.current_after_marker_charno
+            >= line_descriptor.line_end_charno
+        ):
+            return LINE_FEED_CHARACTER if keep_trailing_newline else EMPTY_STRING
 
         retained_indent_start = self.resolve_relative_column_offset(
             lineno=lineno,
@@ -394,7 +375,11 @@ class BlockParserState:
                 character=self.source[line_descriptor.current_after_marker_charno],
             ),
             column_offset=reduction_width,
-            keep_trailing_newline=keep_trailing_newline,
+            end_charno=line_descriptor.current_content_start_charno,
+        ).resolution
+
+        end_charno = line_descriptor.line_end_charno + (
+            1 if keep_trailing_newline else 0
         )
 
         return (
@@ -408,37 +393,24 @@ class BlockParserState:
 
     def indent_reduced_block_content(
         self, line_span: LineSpan, reduction_width: int, keep_trailing_newline: bool
-    ):
-        """
-        Return the concatenated content of a block of lines, with marker prefixes removed
-        and content indent reduced by a given width on each line.
+    ) -> str:
+        """Return the concatenated content of all lines in `line_span` with indentation reduced.
 
-        For each line in the span, this method calls `indent_reduced_line_content` with
-        the specified `reduction_width`. The reduction applies to the content indent of
-        every line individually.
-
-        Trailing newline handling:
-        - Every line **except the last** always keeps its trailing newline, so that the
-        concatenated block maintains line breaks between lines.
-        - The **last line** keeps its trailing newline only when *keep_trailing_newline*
-        is ``True``.  If ``False``, the final newline is omitted.
+        Each line's indentation (after its marker) is reduced by `reduction_width` columns
+        using `indent_reduced_line_content()`. For lines that are **not** the last line
+        in the span, a trailing newline is always included. For the last line, the trailing
+        newline is included only if `keep_trailing_newline` is `True`.
 
         Args:
-            line_span: A `LineSpan` defining the contiguous range of lines to process.
-                The span is half-open: ``[start_lineno, end_lineno)``.
-            reduction_width: Number of visual columns to reduce the content indent by on
-                each line. Must be ≤ each line's ``current_content_indent_width``.
-            keep_trailing_newline: If ``True``, the last line's trailing newline is
-                included; if ``False``, it is omitted. Does **not** affect non-last lines.
+            line_span: Range of lines (`start_lineno` inclusive, `end_lineno` exclusive).
+            reduction_width: Number of columns to remove from each line's indentation;
+                must be non-negative.
+            keep_trailing_newline: If `True`, the last line of the block ends with
+                `LINE_FEED_CHARACTER`; interior lines always end with it regardless.
 
         Returns:
-            A single string formed by concatenating the processed content of all lines
-            in the specified range. The result contains newlines between lines, and a
-            trailing newline is present only if *keep_trailing_newline* is ``True``.
-
-        Raises:
-            ValueError: If *reduction_width* exceeds the ``current_content_indent_width``
-                of any line in the span. The error message identifies the problematic line.
+            A single string formed by joining the reduced line contents in order.
+            If `line_span` contains no lines (`start_lineno == end_lineno`), returns `EMPTY_STRING`.
         """
         return "".join(
             self.indent_reduced_line_content(

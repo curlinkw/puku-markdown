@@ -291,3 +291,11 @@ holds the two allowed delimiter characters.
 
 Reference: https://spec.commonmark.org/0.31.2/#list-items
 """
+
+EMPTY_STRING: str = ""
+"""An immutable sentinel representing the empty string.
+
+Use this constant instead of the literal `""` when the empty string serves as
+a default value, a placeholder, or a well-known marker in public APIs or
+repeated logic. This improves readability and centralises the concept.
+"""
