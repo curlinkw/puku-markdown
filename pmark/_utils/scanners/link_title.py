@@ -93,7 +93,10 @@ def scan_link_title(
             state.status = LinkTitleScannerStatus.SUCCESS
             return state
 
-        if current_char in (LEFT_PARENTHESIS_CHARACTER, RIGHT_PARENTHESIS_CHARACTER):
+        if (
+            current_char == LEFT_PARENTHESIS_CHARACTER
+            and state.expect_closing_marker() == RIGHT_PARENTHESIS_CHARACTER
+        ):
             return state
 
         if current_char == BACKSLASH_CHARACTER and current_charno + 1 < end_charno:
