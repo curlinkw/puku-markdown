@@ -10,11 +10,32 @@ from puku_markdown._utils.constants import (
 )
 
 
-def parse(
-    source: str,
-) -> Document:
+def parse(source: str) -> Document:
     """
-    # TODO
+    Parse a CommonMark Markdown string into a document AST.
+
+    The parser handles CommonMark block elements using an explicit stack
+    (no recursion). Inline elements are not yet supported.
+
+    Preprocessing steps (applied to the entire input, including code blocks):
+        1. NULL characters (``\\x00``) are replaced by the Unicode replacement
+           character (``�``) to avoid issues with C extensions or systems that
+           treat NULL as a string terminator.
+        2. All line endings (``\\r\\n``, ``\\r``, ``\\n``) are normalized to
+           ``\\n``. This simplifies parsing and is safe for HTML output,
+           but note that original line endings inside code blocks are **not**
+           preserved.
+
+    Args:
+        source: A UTF-8 encoded Markdown string.
+
+    Returns:
+        A `Document` object representing the root of the parsed block AST.
+        The document can be traversed or serialized to HTML.
+
+    Example:
+        >>> from puku_markdown import parse
+        >>> doc = parse("# Hello\\n\\n- List item")
     """
 
     # Replace NULL characters with Unicode replacement character
