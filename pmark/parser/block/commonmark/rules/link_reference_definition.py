@@ -135,6 +135,9 @@ def _scan_label(
     ):
         return BlockParserCommand.with_commit_rejection_kind()
 
+    if not local_attrs.link_label.strip():
+        return BlockParserCommand.with_commit_rejection_kind()
+
     local_attrs.current_charno = local_attrs.label_end + 2
 
     local_attrs.advance_step()
