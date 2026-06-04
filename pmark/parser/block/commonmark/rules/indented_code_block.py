@@ -3,7 +3,7 @@ from pmark.parser.block.frame_actuals import BlockParserFrameActuals
 from pmark.parser.block.rule_context import BlockParserRuleContext
 from pmark.parser.block.command import BlockParserCommand
 from pmark.parser.block.logger import logger
-from pmark.elements.block.commonmark.indented_code_block import IdentedCodeBlock
+from pmark.elements.block.commonmark.indented_code_block import IndentedCodeBlock
 from pmark.line_span import LineSpan
 from pmark._utils.constants import INDENTED_CODE_BLOCK_MIN_INDENT, LINE_FEED_CHARACTER
 
@@ -59,7 +59,7 @@ def indented_code_block_rule(
         break
 
     state.current_lineno = current_lineno
-    block = IdentedCodeBlock(
+    block = IndentedCodeBlock(
         content=state.indent_reduced_block_content(
             line_span=LineSpan(
                 start_lineno=context.line_span.start_lineno, end_lineno=last_lineno

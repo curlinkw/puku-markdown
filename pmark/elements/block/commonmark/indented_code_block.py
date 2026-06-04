@@ -4,5 +4,5 @@ from pmark.elements.block.base import BlockElement
 
 
 @dataclass(slots=True)
-class IdentedCodeBlock(BlockElement):
+class IndentedCodeBlock(BlockElement):
     content: str

@@ -1,7 +1,23 @@
 from typing import Self, Union, cast
 from enum import Enum, auto
 from dataclasses import dataclass
+from itertools import chain
 from markdown_it.token import Token as MarkdownItPyToken
+
+from pmark.elements import (
+    BlockElement,
+    AtxHeading,
+    Blockquote,
+    FencedCodeBlock,
+    HtmlBlock,
+    IndentedCodeBlock,
+    List,
+    ListKind,
+    ThematicBreak,
+    SetextHeading,
+    Paragraph,
+    Document,
+)
 
 
 class BlockTokenKind(Enum):
@@ -42,7 +58,7 @@ class FencedCodeBlockPayload:
 
 
 @dataclass(slots=True, frozen=True)
-class AtxHeadingPayload:
+class HeadingPayload:
     level: int
     content: str
 
@@ -61,7 +77,7 @@ class BlockToken:
         Union[
             ContentPayload,
             FencedCodeBlockPayload,
-            AtxHeadingPayload,
+            HeadingPayload,
             MarkupPayload,
             ListPayload,
         ]
@@ -172,7 +188,7 @@ class BlockToken:
                         cls(
                             kind=BlockTokenKind.HEADING,
                             polarity=BlockTokenPolarity.SELF_CLOSING,
-                            payload=AtxHeadingPayload(
+                            payload=HeadingPayload(
                                 level=int(token.tag[1:]),
                                 content=tokens[token_idx + 1].content,
                             ),
@@ -202,3 +218,144 @@ class BlockToken:
                     converted_tokens.append(_from_single_token(token))
 
         return converted_tokens
+
+    @classmethod
+    def from_block(cls, block: BlockElement) -> list[Self]:
+        match block:
+            case AtxHeading():
+                return [
+                    cls(
+                        kind=BlockTokenKind.HEADING,
+                        polarity=BlockTokenPolarity.SELF_CLOSING,
+                        payload=HeadingPayload(
+                            level=block.level, content=block.content
+                        ),
+                    )
+                ]
+            case Blockquote():
+                return [
+                    cls(
+                        kind=BlockTokenKind.BLOCKQUOTE,
+                        polarity=BlockTokenPolarity.OPEN,
+                        payload=None,
+                    ),
+                    *chain(*map(cls.from_block, block.children)),
+                    cls(
+                        kind=BlockTokenKind.BLOCKQUOTE,
+                        polarity=BlockTokenPolarity.CLOSE,
+                        payload=None,
+                    ),
+                ]
+            case FencedCodeBlock():
+                return [
+                    cls(
+                        kind=BlockTokenKind.FENCED_CODE_BLOCK,
+                        polarity=BlockTokenPolarity.SELF_CLOSING,
+                        payload=FencedCodeBlockPayload(
+                            markup=block.markup,
+                            info_string=block.info_string,
+                            content=block.content,
+                        ),
+                    )
+                ]
+            case HtmlBlock():
+                return [
+                    cls(
+                        kind=BlockTokenKind.HTML_BLOCK,
+                        polarity=BlockTokenPolarity.SELF_CLOSING,
+                        payload=ContentPayload(content=block.content),
+                    )
+                ]
+            case IndentedCodeBlock():
+                return [
+                    cls(
+                        kind=BlockTokenKind.INDENTED_CODE_BLOCK,
+                        polarity=BlockTokenPolarity.SELF_CLOSING,
+                        payload=ContentPayload(content=block.content),
+                    )
+                ]
+            case List():
+                token_kind = (
+                    BlockTokenKind.BULLET_LIST
+                    if block.kind is ListKind.BULLET
+                    else BlockTokenKind.ORDERED_LIST
+                )
+
+                item_tokens: list[Self] = []
+                for item in block.items:
+                    item_tokens.append(
+                        cls(
+                            kind=BlockTokenKind.LIST_ITEM,
+                            polarity=BlockTokenPolarity.OPEN,
+                            payload=ListPayload(
+                                markup=block.marker_char,
+                                marker_number=item.marker_number,
+                            ),
+                        )
+                    )
+                    item_tokens.extend(chain(*map(cls.from_block, item.children)))
+                    item_tokens.append(
+                        cls(
+                            kind=BlockTokenKind.LIST_ITEM,
+                            polarity=BlockTokenPolarity.CLOSE,
+                            payload=ListPayload(
+                                markup=block.marker_char, marker_number=None
+                            ),
+                        )
+                    )
+
+                return [
+                    cls(
+                        kind=token_kind,
+                        polarity=BlockTokenPolarity.OPEN,
+                        payload=ListPayload(
+                            markup=block.marker_char,
+                            marker_number=block.items[0].marker_number,
+                        ),
+                    ),
+                    *item_tokens,
+                    cls(
+                        kind=token_kind,
+                        polarity=BlockTokenPolarity.CLOSE,
+                        payload=ListPayload(
+                            markup=block.marker_char, marker_number=None
+                        ),
+                    ),
+                ]
+
+            case ThematicBreak():
+                return [
+                    cls(
+                        kind=BlockTokenKind.THEMATIC_BREAK,
+                        polarity=BlockTokenPolarity.SELF_CLOSING,
+                        payload=MarkupPayload(markup=block.markup),
+                    )
+                ]
+
+            case SetextHeading():
+                return [
+                    cls(
+                        kind=BlockTokenKind.HEADING,
+                        polarity=BlockTokenPolarity.SELF_CLOSING,
+                        payload=HeadingPayload(
+                            level=(1 if block.marker == "=" else 2),
+                            content=block.content,
+                        ),
+                    )
+                ]
+
+            case Paragraph():
+                return [
+                    cls(
+                        kind=BlockTokenKind.PARAGRAPH,
+                        polarity=BlockTokenPolarity.SELF_CLOSING,
+                        payload=ContentPayload(content=block.content),
+                    )
+                ]
+
+            case _:
+                raise ValueError(f"Unknown type: {type(block)}")
+
+    @classmethod
+    def from_document(cls, document: Document) -> list[Self]:
+        return [*chain(*map(cls.from_block, document.root_blocks))]
