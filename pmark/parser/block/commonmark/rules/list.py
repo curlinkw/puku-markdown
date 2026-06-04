@@ -1,3 +1,4 @@
+from typing import NamedTuple
 from dataclasses import replace
 
 from pmark.parser.block.state import BlockParserState
@@ -22,9 +23,15 @@ from pmark._utils.constants import (
 )
 
 
+class _ScannedMarker(NamedTuple):
+    after_marker_charno: int
+    list_kind: ListKind
+    marker_number: int | None
+
+
 def _get_after_bullet_marker_charno(
     state: BlockParserState, line_descriptor: LineDescriptor
-) -> int | None:
+) -> _ScannedMarker | None:
     # is_content_start_beyond_source
     if line_descriptor.current_content_start_charno >= len(state.source):
         return None
@@ -42,12 +49,16 @@ def _get_after_bullet_marker_charno(
     ):
         return None
 
-    return after_marker_charno
+    return _ScannedMarker(
+        after_marker_charno=after_marker_charno,
+        list_kind=ListKind.BULLET,
+        marker_number=None,
+    )
 
 
 def _get_after_ordered_marker_charno(
     state: BlockParserState, line_descriptor: LineDescriptor
-) -> int | None:
+) -> _ScannedMarker | None:
     # marker_number + marker_delimiter
     if line_descriptor.current_content_length < 2:
         return None
@@ -80,40 +91,41 @@ def _get_after_ordered_marker_charno(
     ):
         return None
 
-    return after_marker_charno
+    marker_number = int(
+        state.source[
+            line_descriptor.current_content_start_charno : after_marker_charno - 1
+        ]
+    )
+
+    return _ScannedMarker(
+        after_marker_charno=after_marker_charno,
+        list_kind=ListKind.ORDERED,
+        marker_number=marker_number,
+    )
 
 
 def _scan_marker(
     state: BlockParserState,
     line_descriptor: LineDescriptor,
-    require_ordered_list_starts_with_one: bool,
-) -> tuple[int, ListKind] | None:
+    require_marker_number_is_one: bool,
+) -> _ScannedMarker | None:
     # is_terminating_paragraph = (not is_start_line_outdented)
     if (
-        after_marker_charno := _get_after_bullet_marker_charno(
+        scanned_marker := _get_after_bullet_marker_charno(
             state=state, line_descriptor=line_descriptor
         )
     ) is not None:
-        return (after_marker_charno, ListKind.BULLET)
+        return scanned_marker
 
     if (
-        after_marker_charno := _get_after_ordered_marker_charno(
+        scanned_marker := _get_after_ordered_marker_charno(
             state=state, line_descriptor=line_descriptor
         )
     ) is not None:
-        if (
-            require_ordered_list_starts_with_one
-            and int(
-                state.source[
-                    line_descriptor.current_content_start_charno : after_marker_charno
-                    - 1
-                ]
-            )
-            != 1
-        ):
+        if require_marker_number_is_one and scanned_marker.marker_number != 1:
             return None
 
-        return (after_marker_charno, ListKind.ORDERED)
+        return scanned_marker
 
     return None
 
@@ -165,19 +177,17 @@ def list_rule_as_paragraph_terminator(
         scanned_marker := _scan_marker(
             state=state,
             line_descriptor=start_line_descriptor,
-            require_ordered_list_starts_with_one=is_terminating_paragraph,
+            require_marker_number_is_one=is_terminating_paragraph,
         )
     ) is None:
         return BlockParserCommand.with_commit_rejection_kind()
 
-    after_marker_charno, _ = scanned_marker
-
     # If we're starting a new unordered list right after
     # a paragraph, first line should not be empty.
     if is_terminating_paragraph and (
-        (after_marker_charno >= start_line_descriptor.line_end_charno)
+        (scanned_marker.after_marker_charno >= start_line_descriptor.line_end_charno)
         or state.next_non_space_or_tab_charno(
-            start_charno=after_marker_charno,
+            start_charno=scanned_marker.after_marker_charno,
             end_charno=start_line_descriptor.line_end_charno,
         )
         is None
@@ -245,6 +255,53 @@ def _lookahead_after_item_command(
     )
 
 
+def _process_after_lookahead(
+    state: BlockParserState,
+    context: BlockParserRuleContext,
+    local_attrs: ListLocals,
+    end_lineno: int,
+) -> None:
+    if context.expect_lookahead_matched():
+        local_attrs.is_terminated = True
+        context.lookahead_matched = None
+        return
+
+    current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
+
+    match local_attrs.list_kind:
+        case ListKind.BULLET:
+            scanned_marker = _get_after_bullet_marker_charno(
+                state=state,
+                line_descriptor=current_line_descriptor,
+            )
+
+        case ListKind.ORDERED:
+            scanned_marker = _get_after_ordered_marker_charno(
+                state=state,
+                line_descriptor=current_line_descriptor,
+            )
+
+        case _:
+            raise ValueError(f"Wrong {local_attrs.list_kind}")
+
+    if (scanned_marker is None) or (
+        local_attrs.marker_char != state.source[scanned_marker.after_marker_charno - 1]
+    ):
+        local_attrs.is_terminated = True
+        context.lookahead_matched = None
+        return
+
+    local_attrs.current_after_marker_charno = scanned_marker.after_marker_charno
+    context.lookahead_matched = None
+
+    if (not local_attrs.is_terminated) and local_attrs.current_lineno < end_lineno:
+        local_attrs.block_items.append(
+            ListItem(marker_number=scanned_marker.marker_number)
+        )
+
+    return None
+
+
 def list_rule(
     state: BlockParserState,
     inherited_attributes: BlockParserFrameActuals,
@@ -281,7 +338,7 @@ def list_rule(
             scanned_marker := _scan_marker(
                 state=state,
                 line_descriptor=start_line_descriptor,
-                require_ordered_list_starts_with_one=False,
+                require_marker_number_is_one=False,
             )
         ) is None:
             return BlockParserCommand.with_commit_rejection_kind()
@@ -289,21 +346,20 @@ def list_rule(
         if context.is_speculative_mode:
             return BlockParserCommand.with_commit_success_kind()
 
-        after_marker_charno, list_kind = scanned_marker
-
-        marker_char = state.source[after_marker_charno - 1]
+        marker_char = state.source[scanned_marker.after_marker_charno - 1]
 
         context.bind_production(
             production=BlockParserRule.LIST,
             local_attributes=ListLocals(
-                list_kind=list_kind,
-                current_after_marker_charno=after_marker_charno,
+                list_kind=scanned_marker.list_kind,
+                current_after_marker_charno=scanned_marker.after_marker_charno,
                 marker_char=marker_char,
                 current_item_start_lineno=start_lineno,
                 current_lineno=start_lineno,
                 line_descriptors_editor=TransactionalEditor[LineDescriptor](
                     target=state.line_descriptors
                 ),
+                block_items=[ListItem(marker_number=scanned_marker.marker_number)],
             ),
         )
 
@@ -342,43 +398,18 @@ def list_rule(
             local_attrs.is_terminated = True
 
         case _ListScanStep.AFTER_LOOKAHEAD:
-            if context.expect_lookahead_matched():
-                local_attrs.is_terminated = True
-
-            context.lookahead_matched = None
-
-            current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
-
-            match local_attrs.list_kind:
-                case ListKind.BULLET:
-                    after_marker_charno = _get_after_bullet_marker_charno(
-                        state=state,
-                        line_descriptor=current_line_descriptor,
-                    )
-
-                case ListKind.ORDERED:
-                    after_marker_charno = _get_after_ordered_marker_charno(
-                        state=state,
-                        line_descriptor=current_line_descriptor,
-                    )
-
-                case _:
-                    raise ValueError(f"Wrong {local_attrs.list_kind}")
-
-            if (after_marker_charno is None) or (
-                local_attrs.marker_char != state.source[after_marker_charno - 1]
-            ):
-                local_attrs.is_terminated = True
-            else:
-                local_attrs.current_after_marker_charno = after_marker_charno
+            _process_after_lookahead(
+                state=state,
+                context=context,
+                local_attrs=local_attrs,
+                end_lineno=end_lineno,
+            )
 
     while (not local_attrs.is_terminated) and local_attrs.current_lineno < end_lineno:
         current_line_descriptor = state.line_descriptors[local_attrs.current_lineno]
         current_item_start_line_descriptor = state.line_descriptors[
             local_attrs.current_item_start_lineno
         ]
-        block_item = ListItem()
-        local_attrs.block_items.append(block_item)
 
         if current_line_descriptor.is_lazy_continuation:
             raise RuntimeError(
@@ -465,7 +496,9 @@ def list_rule(
                     rule_chain=BlockParserRuleChain.FULL_COMMONMARK_RULE_CHAIN,
                     actuals=BlockParserFrameActuals(
                         parent_production=BlockParserRule.LIST,
-                        block_stream=BlockParserBlockStream(block_item.children.append),
+                        block_stream=BlockParserBlockStream(
+                            local_attrs.block_items[-1].children.append
+                        ),
                         continuation_line_limit=inherited_attributes.continuation_line_limit,
                     ),
                 ),

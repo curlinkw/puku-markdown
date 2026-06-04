@@ -12,6 +12,7 @@ class ListKind(Enum):
 @dataclass(slots=True)
 class ListItem:
     children: list[BlockElement] = field(default_factory=list)
+    marker_number: int | None = field(default=None)
 
 
 @dataclass(slots=True)
