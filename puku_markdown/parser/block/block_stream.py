@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from puku_markdown.elements.block.base import BlockElement
@@ -15,7 +17,7 @@ class BlockParserBlockStream:
 
     __slots__ = ("_emit",)
 
-    def __init__(self, emit: Callable[["BlockElement"], None]) -> None:
+    def __init__(self, emit: Callable[[BlockElement], None]) -> None:
         """Create a stream that calls `emit` for every block.
 
         Args:
@@ -24,6 +26,6 @@ class BlockParserBlockStream:
         """
         self._emit = emit
 
-    def __call__(self, block: "BlockElement") -> None:
+    def __call__(self, block: BlockElement) -> None:
         """Send a finalized block through the stream."""
         self._emit(block)

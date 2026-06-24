@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "puku-markdown"
 version = "0.1.2"
-description = "Add your description here"
+description = "Explicit stack, pure CommonMark parser. "
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
@@ -17,11 +17,57 @@ classifiers = [
     "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: 3.16",
 ]
+license = {text = "MIT"}
 
 [dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+]
 test = [
     "markdown-it-py>=4.2.0",
     "pytest>=9.0.3",
+    "types-requests>=2.33",
     "pytest-cov>=7.1.0",
     "requests>=2.34.2",
 ]
+
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+lint.select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "N",
+    "UP",
+    "B",
+    "SIM",
+    "RUF",
+]
+lint.ignore = [
+    "E501",
+    "SIM108",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "puku_markdown",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = false
