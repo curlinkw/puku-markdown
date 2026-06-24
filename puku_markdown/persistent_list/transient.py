@@ -1,4 +1,4 @@
-from typing import Generic, overload, Union, Self
+from typing import Generic, Self, overload
 
 from puku_markdown.persistent_list.core import PersistentList
 from puku_markdown.persistent_list.type_vars import ItemT
@@ -17,7 +17,7 @@ class Transient(Generic[ItemT]):
     is active.
     """
 
-    __slots__ = ("_target", "_is_active")
+    __slots__ = ("_is_active", "_target")
 
     def __init__(self, target: PersistentList[ItemT]) -> None:
         self._target: PersistentList[ItemT] = target
@@ -32,7 +32,7 @@ class Transient(Generic[ItemT]):
     @overload
     def __getitem__(self, index: slice) -> list[ItemT]: ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[ItemT, list[ItemT]]:
+    def __getitem__(self, index: int | slice) -> ItemT | list[ItemT]:
         """
         Return the item(s) at the given index or slice.
 

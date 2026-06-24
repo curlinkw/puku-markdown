@@ -1,5 +1,5 @@
-from typing import cast
 from dataclasses import dataclass, field
+from typing import cast
 
 from puku_markdown.line_span import LineSpan
 from puku_markdown.parser.block.rule import BlockParserRule

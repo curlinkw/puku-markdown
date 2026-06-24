@@ -1,13 +1,13 @@
-from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
-from puku_markdown.parser.block.state import BlockParserState
-from puku_markdown.parser.block.parse import block_parse
-from puku_markdown.elements.document import Document
-from puku_markdown._utils.re_patterns import LINE_ENDINGS_RE
 from puku_markdown._utils.constants import (
+    LINE_FEED_CHARACTER,
     NULL_CHARACTER,
     UNICODE_REPLACEMENT_CHARACTER,
-    LINE_FEED_CHARACTER,
 )
+from puku_markdown._utils.re_patterns import LINE_ENDINGS_RE
+from puku_markdown.elements.document import Document
+from puku_markdown.parser.block.parse import block_parse
+from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
+from puku_markdown.parser.block.state import BlockParserState
 
 
 def parse(source: str) -> Document:

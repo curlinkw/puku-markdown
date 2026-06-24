@@ -332,9 +332,9 @@ including) or `U+007F`.
 
 An [ASCII punctuation character](@)
 is `!`, `"`, `#`, `$`, `%`, `&`, `'`, `(`, `)`,
-`*`, `+`, `,`, `-`, `.`, `/` (U+0021–2F), 
+`*`, `+`, `,`, `-`, `.`, `/` (U+0021–2F),
 `:`, `;`, `<`, `=`, `>`, `?`, `@` (U+003A–0040),
-`[`, `\`, `]`, `^`, `_`, `` ` `` (U+005B–0060), 
+`[`, `\`, `]`, `^`, `_`, `` ` `` (U+005B–0060),
 `{`, `|`, `}`, or `~` (U+007B–007E).
 
 A [Unicode punctuation character](@) is a character in the Unicode `P`
@@ -983,7 +983,7 @@ Spaces and tabs are allowed between the characters:
 Spaces and tabs are allowed at the end:
 
 ```````````````````````````````` example
-- - - -    
+- - - -
 .
 <hr />
 ````````````````````````````````
@@ -1174,7 +1174,7 @@ Contents are parsed as inlines:
 Leading and trailing spaces or tabs are ignored in parsing inline content:
 
 ```````````````````````````````` example
-#                  foo                     
+#                  foo
 .
 <h1>foo</h1>
 ````````````````````````````````
@@ -1237,7 +1237,7 @@ It need not be the same length as the opening sequence:
 Spaces or tabs are allowed after the closing sequence:
 
 ```````````````````````````````` example
-### foo ###     
+### foo ###
 .
 <h3>foo</h3>
 ````````````````````````````````
@@ -1305,7 +1305,7 @@ Bar foo
 ATX headings can be empty:
 
 ```````````````````````````````` example
-## 
+##
 #
 ### ###
 .
@@ -1438,7 +1438,7 @@ indentation, and may have trailing spaces or tabs:
 
 ```````````````````````````````` example
 Foo
-   ----      
+   ----
 .
 <h2>Foo</h2>
 ````````````````````````````````
@@ -1474,7 +1474,7 @@ Foo
 Trailing spaces or tabs in the content line do not cause a hard line break:
 
 ```````````````````````````````` example
-Foo  
+Foo
 -----
 .
 <h2>Foo</h2>
@@ -1814,9 +1814,9 @@ Here we have three chunks separated by blank lines:
     chunk1
 
     chunk2
-  
- 
- 
+
+
+
     chunk3
 .
 <pre><code>chunk1
@@ -1835,11 +1835,11 @@ the content, even in interior blank lines:
 
 ```````````````````````````````` example
     chunk1
-      
+
       chunk2
 .
 <pre><code>chunk1
-  
+
   chunk2
 </code></pre>
 ````````````````````````````````
@@ -1910,9 +1910,9 @@ are not included in it:
 
 ```````````````````````````````` example
 
-    
+
     foo
-    
+
 
 .
 <pre><code>foo
@@ -1923,9 +1923,9 @@ are not included in it:
 Trailing spaces or tabs are included in the code block's content:
 
 ```````````````````````````````` example
-    foo  
+    foo
 .
-<pre><code>foo  
+<pre><code>foo
 </code></pre>
 ````````````````````````````````
 
@@ -2107,11 +2107,11 @@ A code block can have all empty lines as its content:
 ```````````````````````````````` example
 ```
 
-  
+
 ```
 .
 <pre><code>
-  
+
 </code></pre>
 ````````````````````````````````
 
@@ -3186,9 +3186,9 @@ them.
 
 
 ```````````````````````````````` example
-   [foo]: 
-      /url  
-           'the title'  
+   [foo]:
+      /url
+           'the title'
 
 [foo]
 .
@@ -3613,8 +3613,8 @@ that ends with two or more spaces will not end with a [hard line
 break]:
 
 ```````````````````````````````` example
-aaa     
-bbb     
+aaa
+bbb
 .
 <p>aaa<br />
 bbb</p>
@@ -3630,14 +3630,14 @@ is [tight] or [loose].
 Blank lines at the beginning and end of the document are also ignored.
 
 ```````````````````````````````` example
-  
+
 
 aaa
-  
+
 
 # aaa
 
-  
+
 .
 <p>aaa</p>
 <h1>aaa</h1>
@@ -3898,8 +3898,8 @@ A block quote can be empty:
 
 ```````````````````````````````` example
 >
->  
-> 
+>
+>
 .
 <blockquote>
 </blockquote>
@@ -3911,7 +3911,7 @@ A block quote can have initial or final blank lines:
 ```````````````````````````````` example
 >
 > foo
->  
+>
 .
 <blockquote>
 <p>foo</p>
@@ -4616,7 +4616,7 @@ When the list item starts with a blank line, the number of spaces
 following the list marker doesn't change the required indentation:
 
 ```````````````````````````````` example
--   
+-
   foo
 .
 <ul>
@@ -4660,7 +4660,7 @@ It does not matter whether there are spaces or tabs following the [list marker]:
 
 ```````````````````````````````` example
 - foo
--   
+-
 - bar
 .
 <ul>
@@ -5187,7 +5187,7 @@ is not indented as far as the first paragraph `foo`:
 ``` markdown
  10. foo
 
-   bar  
+   bar
 ```
 
 Arguably this text does read like a list item with `bar` as a subparagraph,
@@ -5952,7 +5952,7 @@ No stripping occurs if the code span contains only spaces:
 ```````````````````````````````` example
 ``
 foo
-bar  
+bar
 baz
 ``
 .
@@ -5961,7 +5961,7 @@ baz
 
 ```````````````````````````````` example
 ``
-foo 
+foo
 ``
 .
 <p><code>foo </code></p>
@@ -5971,7 +5971,7 @@ foo
 Interior spaces are not collapsed:
 
 ```````````````````````````````` example
-`foo   bar 
+`foo   bar
 baz`
 .
 <p><code>foo   bar  baz</code></p>
@@ -7543,7 +7543,7 @@ Here is a simple inline link:
 ````````````````````````````````
 
 
-The title, the link text and even 
+The title, the link text and even
 the destination may be omitted:
 
 ```````````````````````````````` example
@@ -8348,7 +8348,7 @@ As with full reference links, spaces, tabs, or line endings are not
 allowed between the two sets of brackets:
 
 ```````````````````````````````` example
-[foo] 
+[foo]
 []
 
 [foo]: /url "title"
@@ -8676,7 +8676,7 @@ As with reference links, spaces, tabs, and line endings, are not allowed
 between the two sets of brackets:
 
 ```````````````````````````````` example
-![foo] 
+![foo]
 []
 
 [foo]: /url "title"
@@ -9210,7 +9210,7 @@ is parsed as a [hard line break](@) (rendered
 in HTML as a `<br />` tag):
 
 ```````````````````````````````` example
-foo  
+foo
 baz
 .
 <p>foo<br />
@@ -9233,7 +9233,7 @@ baz</p>
 More than two spaces can be used:
 
 ```````````````````````````````` example
-foo       
+foo
 baz
 .
 <p>foo<br />
@@ -9244,7 +9244,7 @@ baz</p>
 Leading spaces at the beginning of the next line are ignored:
 
 ```````````````````````````````` example
-foo  
+foo
      bar
 .
 <p>foo<br />
@@ -9265,7 +9265,7 @@ Hard line breaks can occur inside emphasis, links, and other constructs
 that allow inline content:
 
 ```````````````````````````````` example
-*foo  
+*foo
 bar*
 .
 <p><em>foo<br />
@@ -9285,7 +9285,7 @@ bar</em></p>
 Hard line breaks do not occur inside code spans
 
 ```````````````````````````````` example
-`code  
+`code
 span`
 .
 <p><code>code   span</code></p>
@@ -9303,10 +9303,10 @@ span`
 or HTML tags:
 
 ```````````````````````````````` example
-<a href="foo  
+<a href="foo
 bar">
 .
-<p><a href="foo  
+<p><a href="foo
 bar"></p>
 ````````````````````````````````
 
@@ -9332,7 +9332,7 @@ foo\
 
 
 ```````````````````````````````` example
-foo  
+foo
 .
 <p>foo</p>
 ````````````````````````````````
@@ -9346,7 +9346,7 @@ foo
 
 
 ```````````````````````````````` example
-### foo  
+### foo
 .
 <h3>foo</h3>
 ````````````````````````````````
@@ -9373,7 +9373,7 @@ Spaces at the end of the line and beginning of the next line are
 removed:
 
 ```````````````````````````````` example
-foo 
+foo
  baz
 .
 <p>foo

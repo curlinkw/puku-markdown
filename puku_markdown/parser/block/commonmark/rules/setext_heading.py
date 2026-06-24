@@ -1,21 +1,21 @@
-from puku_markdown.parser.block.state import BlockParserState
-from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
-from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown._utils.constants import EQUALS_SIGN_CHARACTER, SETEXT_HEADING_MARKERS
+from puku_markdown.elements.block.commonmark.setext_heading import SetextHeading
+from puku_markdown.line_span import LineSpan
 from puku_markdown.parser.block.command import (
     BlockParserCommand,
     BlockParserCommandKind,
 )
-from puku_markdown.parser.block.rule import BlockParserRule
-from puku_markdown.parser.block.frame_spec import BlockParserFrameSpec
-from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
-from puku_markdown.parser.block.line_descriptor import LineDescriptor
-from puku_markdown.parser.block.logger import logger
 from puku_markdown.parser.block.commonmark.rules.locals.setext_heading import (
     SetextHeadingLocals,
 )
-from puku_markdown.elements.block.commonmark.setext_heading import SetextHeading
-from puku_markdown.line_span import LineSpan
-from puku_markdown._utils.constants import SETEXT_HEADING_MARKERS, EQUALS_SIGN_CHARACTER
+from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
+from puku_markdown.parser.block.frame_spec import BlockParserFrameSpec
+from puku_markdown.parser.block.line_descriptor import LineDescriptor
+from puku_markdown.parser.block.logger import logger
+from puku_markdown.parser.block.rule import BlockParserRule
+from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
+from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown.parser.block.state import BlockParserState
 
 
 def _parse_setext_underline(

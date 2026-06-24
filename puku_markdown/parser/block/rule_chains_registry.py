@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Final, Mapping
+from typing import Final
 
 from puku_markdown.parser.block.commonmark import (
     HTML_BLOCK_RULES,
@@ -15,9 +16,8 @@ from puku_markdown.parser.block.commonmark import (
     setext_heading_rule,
     thematic_break_rule,
 )
-from puku_markdown.parser.block.type_aliases import BlockParserRuleFunc
 from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
-
+from puku_markdown.parser.block.type_aliases import BlockParserRuleFunc
 
 _COMMON_TERMINATORS: Final[tuple[BlockParserRuleFunc, ...]] = (
     fenced_code_block_rule,

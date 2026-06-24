@@ -1,14 +1,14 @@
-from puku_markdown.parser.block.state import BlockParserState
-from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
-from puku_markdown.parser.block.rule_context import BlockParserRuleContext
-from puku_markdown.parser.block.command import BlockParserCommand
-from puku_markdown.parser.block.logger import logger
-from puku_markdown.elements.block.commonmark.thematic_break import ThematicBreak
-from puku_markdown._utils.predicates import is_space_or_tab
 from puku_markdown._utils.constants import (
     THEMATIC_BREAK_MARKERS,
     THEMATIC_BREAK_MIN_MARKER_COUNT,
 )
+from puku_markdown._utils.predicates import is_space_or_tab
+from puku_markdown.elements.block.commonmark.thematic_break import ThematicBreak
+from puku_markdown.parser.block.command import BlockParserCommand
+from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
+from puku_markdown.parser.block.logger import logger
+from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown.parser.block.state import BlockParserState
 
 
 def thematic_break_rule(

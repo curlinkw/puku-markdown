@@ -1,5 +1,3 @@
-from functools import singledispatch
-
 from puku_markdown.elements import Document
 
 

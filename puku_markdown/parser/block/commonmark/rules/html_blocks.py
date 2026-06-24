@@ -1,30 +1,30 @@
 from re import Pattern
 from typing import Final
 
-from puku_markdown.parser.block.state import BlockParserState
-from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
-from puku_markdown.parser.block.rule_context import BlockParserRuleContext
-from puku_markdown.parser.block.command import BlockParserCommand
-from puku_markdown.parser.block.logger import logger
-from puku_markdown.elements.block.commonmark.html_block import HtmlBlock, HtmlBlockKind
-from puku_markdown.line_span import LineSpan
 from puku_markdown._utils.constants import LESS_THAN_CHARACTER
 from puku_markdown._utils.re_patterns import (
-    HTML_RAW_TEXT_TAG_OPEN_RE,
-    HTML_RAW_TEXT_TAG_CLOSE_RE,
-    HTML_COMMENT_OPEN_RE,
-    HTML_COMMENT_CLOSE_RE,
-    HTML_PROCESSING_INSTRUCTION_OPEN_RE,
-    HTML_PROCESSING_INSTRUCTION_CLOSE_RE,
-    HTML_MARKUP_DECLARATION_OPEN_RE,
-    HTML_MARKUP_DECLARATION_CLOSE_RE,
-    HTML_CDATA_OPEN_RE,
-    HTML_CDATA_CLOSE_RE,
-    HTML_BLOCK_LEVEL_TAG_OPEN_RE,
     HTML_BLOCK_LEVEL_TAG_CLOSE_RE,
-    HTML_TAG_OPEN_RE,
+    HTML_BLOCK_LEVEL_TAG_OPEN_RE,
+    HTML_CDATA_CLOSE_RE,
+    HTML_CDATA_OPEN_RE,
+    HTML_COMMENT_CLOSE_RE,
+    HTML_COMMENT_OPEN_RE,
+    HTML_MARKUP_DECLARATION_CLOSE_RE,
+    HTML_MARKUP_DECLARATION_OPEN_RE,
+    HTML_PROCESSING_INSTRUCTION_CLOSE_RE,
+    HTML_PROCESSING_INSTRUCTION_OPEN_RE,
+    HTML_RAW_TEXT_TAG_CLOSE_RE,
+    HTML_RAW_TEXT_TAG_OPEN_RE,
     HTML_TAG_CLOSE_RE,
+    HTML_TAG_OPEN_RE,
 )
+from puku_markdown.elements.block.commonmark.html_block import HtmlBlock, HtmlBlockKind
+from puku_markdown.line_span import LineSpan
+from puku_markdown.parser.block.command import BlockParserCommand
+from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
+from puku_markdown.parser.block.logger import logger
+from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown.parser.block.state import BlockParserState
 from puku_markdown.parser.block.type_aliases import BlockParserRuleFunc
 
 
@@ -305,7 +305,7 @@ When any of these rules matches, the current block (paragraph, list item,
 blockquote, etc.) ends immediately. The matched HTML content is then processed
 as its own block.
 
-This set excludes `html_tag_rule` because that rule matches inline‑level tags
+This set excludes `html_tag_rule` because that rule matches inline-level tags
 which must **not** terminate blocks - they should be parsed as inline HTML
 inside the current block.
 

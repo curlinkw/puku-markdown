@@ -16,23 +16,23 @@ Design decisions:
   a separate `type_vars.py` module.
 """
 
-from typing import TypeVar, Union
+from typing import TypeVar
 
 from puku_markdown.parser.block.commonmark.rules.locals import (
-    ParagraphLocals,
-    SetextHeadingLocals,
     BlockquoteLocals,
     LinkReferenceDefinitionLocals,
     ListLocals,
+    ParagraphLocals,
+    SetextHeadingLocals,
 )
 
+BlockParserRuleLocals = (
+    ParagraphLocals
+    | SetextHeadingLocals
+    | BlockquoteLocals
+    | LinkReferenceDefinitionLocals
+    | ListLocals
+)
 
-BlockParserRuleLocals = Union[
-    ParagraphLocals,
-    SetextHeadingLocals,
-    BlockquoteLocals,
-    LinkReferenceDefinitionLocals,
-    ListLocals,
-]
 
 BlockParserRuleLocalsT = TypeVar("BlockParserRuleLocalsT", bound=BlockParserRuleLocals)

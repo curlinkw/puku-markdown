@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from puku_markdown.parser.block.rule import BlockParserRule
 from puku_markdown.parser.block.block_stream import BlockParserBlockStream
+from puku_markdown.parser.block.rule import BlockParserRule
 
 
 @dataclass(slots=True, frozen=True)

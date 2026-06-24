@@ -1,19 +1,19 @@
 from puku_markdown.line_span import LineSpan
-from puku_markdown.parser.block.state import BlockParserState
-from puku_markdown.parser.block.frame import BlockParserFrame
+from puku_markdown.parser.block.block_stream import BlockParserBlockStream
 from puku_markdown.parser.block.command import (
-    BlockParserCommand,
-    BlockParserCommandKind,
     APPLICABLE_COMMAND_KINDS,
     NESTING_COMMAND_KINDS,
     SPECULATIVE_SAFE_COMMAND_KINDS,
+    BlockParserCommand,
+    BlockParserCommandKind,
 )
+from puku_markdown.parser.block.frame import BlockParserFrame
+from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
+from puku_markdown.parser.block.logger import logger
 from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
 from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown.parser.block.state import BlockParserState
 from puku_markdown.parser.block.upcall import BlockParserUpcall, BlockParserUpcallKind
-from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
-from puku_markdown.parser.block.block_stream import BlockParserBlockStream
-from puku_markdown.parser.block.logger import logger
 
 
 def _process_command(
@@ -128,16 +128,16 @@ def _parse_through_next_applicable_rule(
         # This line is marked as a lazy continuation (e.g., because it had no '>'
         # inside a blockquote but was not terminated by an empty line or another tag).
         # It reached the nested tokenizer because the previous block rule (e.g., heading)
-        # did NOT consume it – that block cannot be continued across lines.
+        # did NOT consume it - that block cannot be continued across lines.
         # Breaking here is correct and intentional: it forces the nested parser
         # to stop this line.
         #
-        # TODO: Re‑evaluate the lazy continuation handling in the overall parser architecture.
+        # TODO: Re-evaluate the lazy continuation handling in the overall parser architecture.
         #
         # The current approach (marking a line with is_lazy_continuation = True) is an
-        # implicit side‑effect of the original markdown‑it‑py sentinel (-1 indentation).
+        # implicit side-effect of the original markdown-it-py sentinel (-1 indentation).
         # The break here is necessary for blocks that cannot be continued (e.g., headings),
-        # but the design is fragile and non‑obvious.
+        # but the design is fragile and non-obvious.
         #
         #
         # This whole mechanism should be reviewed and refactored after full test coverage.

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 from puku_markdown.line_span import LineSpan
-from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
 from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
+from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
 
 
 @dataclass(slots=True, frozen=True)

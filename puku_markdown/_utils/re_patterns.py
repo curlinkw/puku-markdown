@@ -2,7 +2,6 @@ import re
 
 from puku_markdown._utils.constants import HTML_BLOCK_NAMES
 
-
 LINE_ENDINGS_RE = re.compile(r"\r\n?|\n")
 """
 Per CommonMark spec 0.31.2 section 2.1, a line ending is:

@@ -1,17 +1,17 @@
 from dataclasses import dataclass, field
 
-from puku_markdown.parser.block.line_descriptor import LineDescriptor
-from puku_markdown.persistent_list import PersistentList, Transient
-from puku_markdown.column_resolution import ColnoWithResolution, ColnoResolution
-from puku_markdown.line_span import LineSpan
-from puku_markdown.elements import Document
-from puku_markdown._utils.metrics import commonmark_char_width
-from puku_markdown._utils.predicates import is_space_or_tab
 from puku_markdown._utils.constants import (
+    EMPTY_STRING,
     INDENTED_CODE_BLOCK_MIN_INDENT,
     LINE_FEED_CHARACTER,
-    EMPTY_STRING,
 )
+from puku_markdown._utils.metrics import commonmark_char_width
+from puku_markdown._utils.predicates import is_space_or_tab
+from puku_markdown.column_resolution import ColnoResolution, ColnoWithResolution
+from puku_markdown.elements import Document
+from puku_markdown.line_span import LineSpan
+from puku_markdown.parser.block.line_descriptor import LineDescriptor
+from puku_markdown.persistent_list import PersistentList, Transient
 
 
 @dataclass(slots=True)

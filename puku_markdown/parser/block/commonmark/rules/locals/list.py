@@ -1,9 +1,9 @@
-from enum import Enum, auto
 from dataclasses import dataclass
+from enum import Enum, auto
 
-from puku_markdown.persistent_list.transactional_editor import TransactionalEditor
+from puku_markdown.elements.block.commonmark.list import ListItem, ListKind
 from puku_markdown.parser.block.line_descriptor import LineDescriptor
-from puku_markdown.elements.block.commonmark.list import ListKind, ListItem
+from puku_markdown.persistent_list.transactional_editor import TransactionalEditor
 
 
 class _ListScanStep(Enum):

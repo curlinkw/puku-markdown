@@ -1,5 +1,5 @@
-from typing import Generic
 from dataclasses import dataclass
+from typing import Generic
 
 from puku_markdown.persistent_list.type_vars import ItemT
 

@@ -1,33 +1,33 @@
-from typing import NamedTuple
 from dataclasses import replace
+from typing import NamedTuple
 
-from puku_markdown.parser.block.state import BlockParserState
-from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
-from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown._utils.constants import (
+    BULLET_LIST_MARKERS,
+    INDENTED_CODE_BLOCK_MIN_INDENT,
+    MAX_ORDERED_LIST_MARKER_DIGITS,
+    ORDERED_LIST_MARKER_DELIMITERS,
+)
+from puku_markdown._utils.predicates import is_ascii_digit, is_space_or_tab
+from puku_markdown.column_resolution import ColnoWithResolution
+from puku_markdown.elements.block.commonmark.list import List, ListItem, ListKind
+from puku_markdown.line_span import LineSpan
+from puku_markdown.parser.block.block_stream import BlockParserBlockStream
 from puku_markdown.parser.block.command import (
     BlockParserCommand,
     BlockParserCommandKind,
 )
-from puku_markdown.parser.block.rule import BlockParserRule
 from puku_markdown.parser.block.commonmark.rules.locals.list import (
     ListLocals,
     _ListScanStep,
 )
+from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
 from puku_markdown.parser.block.frame_spec import BlockParserFrameSpec
 from puku_markdown.parser.block.line_descriptor import LineDescriptor
+from puku_markdown.parser.block.rule import BlockParserRule
 from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
-from puku_markdown.parser.block.block_stream import BlockParserBlockStream
-from puku_markdown.line_span import LineSpan
+from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown.parser.block.state import BlockParserState
 from puku_markdown.persistent_list.transactional_editor import TransactionalEditor
-from puku_markdown.elements.block.commonmark.list import ListKind, List, ListItem
-from puku_markdown.column_resolution import ColnoWithResolution
-from puku_markdown._utils.predicates import is_space_or_tab, is_ascii_digit
-from puku_markdown._utils.constants import (
-    BULLET_LIST_MARKERS,
-    ORDERED_LIST_MARKER_DELIMITERS,
-    INDENTED_CODE_BLOCK_MIN_INDENT,
-    MAX_ORDERED_LIST_MARKER_DIGITS,
-)
 
 
 class _ScannedMarker(NamedTuple):
@@ -160,11 +160,9 @@ def list_rule_as_paragraph_terminator(
         in (BlockParserRule.PARAGRAPH, BlockParserRule.SETEXT_HEADING)
     ):
         raise RuntimeError(
-            (
-                f"Internal parser error: list_block_paragraph_terminator called in invalid context: "
-                f"speculative={context.is_speculative_mode}, "
-                f"parent={inherited_attributes.parent_production}"
-            )
+            f"Internal parser error: list_block_paragraph_terminator called in invalid context: "
+            f"speculative={context.is_speculative_mode}, "
+            f"parent={inherited_attributes.parent_production}"
         )
 
     if start_line_descriptor.is_lazy_continuation:

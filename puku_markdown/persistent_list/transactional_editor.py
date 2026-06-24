@@ -1,7 +1,7 @@
-from typing import Generic, overload, Union
+from typing import Generic, overload
 
-from puku_markdown.persistent_list.core import PersistentList
 from puku_markdown.persistent_list.change_set import ChangeSet
+from puku_markdown.persistent_list.core import PersistentList
 from puku_markdown.persistent_list.modification import Modification
 from puku_markdown.persistent_list.type_vars import ItemT
 
@@ -26,7 +26,7 @@ class TransactionalEditor(Generic[ItemT]):
     `Transient` may exist while a transaction is open.
     """
 
-    __slots__ = ("_target", "_changeset")
+    __slots__ = ("_changeset", "_target")
 
     def __init__(self, target: PersistentList[ItemT]) -> None:
         self._target: PersistentList[ItemT] = target
@@ -41,7 +41,7 @@ class TransactionalEditor(Generic[ItemT]):
     @overload
     def __getitem__(self, index: slice) -> list[ItemT]: ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[ItemT, list[ItemT]]:
+    def __getitem__(self, index: int | slice) -> ItemT | list[ItemT]:
         """
         Return the item(s) at the given index or slice.
 

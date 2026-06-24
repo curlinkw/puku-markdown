@@ -1,6 +1,6 @@
-from typing import Final, Self
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Final, Self
 
 from puku_markdown.parser.block.frame_spec import BlockParserFrameSpec
 from puku_markdown.parser.block.rule_context import BlockParserRuleContext

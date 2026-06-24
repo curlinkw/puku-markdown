@@ -5,11 +5,9 @@ This module loads the official CommonMark spec examples from a JSON file
 """
 
 import json
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Tuple, Optional
-
 
 _DEFAULT_VERSION = "0.31.2"
 _DEFAULT_JSON_PATH = Path(__file__).parent / "spec.json"
@@ -69,7 +67,7 @@ def _create_example_from_dict(raw: dict) -> SpecExample:
 
 # ----------------------------------------------------------------------
 # Public API
-def get_all_examples(json_path: Optional[Path] = None) -> Tuple[SpecExample, ...]:
+def get_all_examples(json_path: Path | None = None) -> tuple[SpecExample, ...]:
     """Return all spec examples as an immutable tuple of frozen dataclasses.
 
     The result is cached after the first call. Use `json_path` to override

@@ -1,10 +1,9 @@
 import pytest
 from markdown_it import MarkdownIt
 
-from tests.commonmark.spec import SpecExample, get_all_examples
-from tests.markdown_it_py import markdown_it_py_block_parse, BlockToken
-
 from puku_markdown.parser.parse import parse
+from tests.commonmark.spec import SpecExample, get_all_examples
+from tests.markdown_it_py import BlockToken, markdown_it_py_block_parse
 
 
 @pytest.mark.parametrize("spec_example", get_all_examples(), ids=lambda x: x.example)

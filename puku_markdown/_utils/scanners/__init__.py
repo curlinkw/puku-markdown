@@ -9,21 +9,20 @@ side effects on the parser", distinguishing it from stateful `scan_*` methods
 in parser classes that modify the parser's current line or character index.
 """
 
+from puku_markdown._utils.scanners.link_destination import (
+    LinkDestinationScanResult,
+    scan_link_destination,
+)
 from puku_markdown._utils.scanners.link_title import (
     LinkTitleScannerState,
     LinkTitleScannerStatus,
     scan_link_title,
 )
-from puku_markdown._utils.scanners.link_destination import (
-    LinkDestinationScanResult,
-    scan_link_destination,
-)
-
 
 __all__ = [
+    "LinkDestinationScanResult",
     "LinkTitleScannerState",
     "LinkTitleScannerStatus",
-    "scan_link_title",
-    "LinkDestinationScanResult",
     "scan_link_destination",
+    "scan_link_title",
 ]

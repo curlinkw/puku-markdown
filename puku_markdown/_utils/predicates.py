@@ -1,4 +1,4 @@
-from puku_markdown._utils.constants import TAB_CHARACTER, SPACE_CHARACTER
+from puku_markdown._utils.constants import SPACE_CHARACTER, TAB_CHARACTER
 
 
 def is_space_or_tab(character: str) -> bool:

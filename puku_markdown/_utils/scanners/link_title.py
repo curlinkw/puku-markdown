@@ -1,12 +1,12 @@
-from enum import Enum, auto
 from dataclasses import dataclass, field
+from enum import Enum, auto
 
 from puku_markdown._utils.constants import (
-    SINGLE_QUOTE_CHARACTER,
+    BACKSLASH_CHARACTER,
     DOUBLE_QUOTE_CHARACTER,
     LEFT_PARENTHESIS_CHARACTER,
     RIGHT_PARENTHESIS_CHARACTER,
-    BACKSLASH_CHARACTER,
+    SINGLE_QUOTE_CHARACTER,
 )
 
 

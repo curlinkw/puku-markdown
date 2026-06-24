@@ -1,15 +1,15 @@
-from typing import Self
 from dataclasses import dataclass, field
+from typing import Self
 
 from puku_markdown.line_span import LineSpan
+from puku_markdown.parser.block.command import BlockParserCommand
+from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
 from puku_markdown.parser.block.frame_spec import BlockParserFrameSpec
 from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
 from puku_markdown.parser.block.rule_chains_registry import BLOCK_PARSER_RULE_CHAINS
 from puku_markdown.parser.block.rule_context import BlockParserRuleContext
-from puku_markdown.parser.block.command import BlockParserCommand
 from puku_markdown.parser.block.type_aliases import BlockParserRuleFunc
 from puku_markdown.parser.block.upcall import BlockParserUpcall
-from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
 
 
 @dataclass(slots=True)

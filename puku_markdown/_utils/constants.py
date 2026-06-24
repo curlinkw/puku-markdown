@@ -16,7 +16,6 @@ Coding style note:
 
 from typing import Final
 
-
 COMMONMARK_TAB_STOP: Final[int] = 4
 """Number of spaces to which a tab character expands in CommonMark parsing.
 

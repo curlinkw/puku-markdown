@@ -1,5 +1,5 @@
-from enum import Enum, auto
 from dataclasses import dataclass
+from enum import Enum, auto
 
 from puku_markdown.elements.block.base import BlockElement
 

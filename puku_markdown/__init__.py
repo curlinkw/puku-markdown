@@ -1,8 +1,8 @@
 from puku_markdown.elements import (
-    Document,
-    BlockElement,
     AtxHeading,
+    BlockElement,
     Blockquote,
+    Document,
     FencedCodeBlock,
     HtmlBlock,
     HtmlBlockKind,
@@ -11,18 +11,17 @@ from puku_markdown.elements import (
     List,
     ListItem,
     ListKind,
-    ThematicBreak,
-    SetextHeading,
     Paragraph,
+    SetextHeading,
+    ThematicBreak,
 )
 from puku_markdown.parser import parse
 
 __all__ = [
-    "parse",
-    "Document",
-    "BlockElement",
     "AtxHeading",
+    "BlockElement",
     "Blockquote",
+    "Document",
     "FencedCodeBlock",
     "HtmlBlock",
     "HtmlBlockKind",
@@ -31,7 +30,8 @@ __all__ = [
     "List",
     "ListItem",
     "ListKind",
-    "ThematicBreak",
-    "SetextHeading",
     "Paragraph",
+    "SetextHeading",
+    "ThematicBreak",
+    "parse",
 ]

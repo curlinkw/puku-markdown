@@ -1,7 +1,7 @@
-from typing import Generic, overload, Union
+from typing import Generic, overload
 
-from puku_markdown.persistent_list.modification import Modification
 from puku_markdown.persistent_list.change_set import ChangeSet
+from puku_markdown.persistent_list.modification import Modification
 from puku_markdown.persistent_list.type_vars import ItemT
 
 
@@ -24,7 +24,7 @@ class PersistentList(Generic[ItemT]):
     interfere with persistent, versioned changes.
     """
 
-    __slots__ = ("_items", "_modification_stack", "_changeset_stack", "_has_transient")
+    __slots__ = ("_changeset_stack", "_has_transient", "_items", "_modification_stack")
 
     def __init__(self) -> None:
         """Initialise an empty persistent list with no active transient or transaction."""
@@ -61,7 +61,7 @@ class PersistentList(Generic[ItemT]):
     @overload
     def __getitem__(self, index: slice) -> list[ItemT]: ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[ItemT, list[ItemT]]:
+    def __getitem__(self, index: int | slice) -> ItemT | list[ItemT]:
         """
         Return the item(s) at the given index or slice.
 

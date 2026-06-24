@@ -1,28 +1,28 @@
 from dataclasses import replace
 
-from puku_markdown.parser.block.state import BlockParserState
-from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
-from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown._utils.constants import GREATER_THAN_CHARACTER
+from puku_markdown._utils.metrics import commonmark_char_width
+from puku_markdown._utils.predicates import is_space_or_tab
+from puku_markdown.column_resolution import ColnoResolution, ColnoWithResolution
+from puku_markdown.elements.block.commonmark.blockquote import Blockquote
+from puku_markdown.line_span import LineSpan
+from puku_markdown.parser.block.block_stream import BlockParserBlockStream
 from puku_markdown.parser.block.command import (
     BlockParserCommand,
     BlockParserCommandKind,
 )
-from puku_markdown.parser.block.rule import BlockParserRule
 from puku_markdown.parser.block.commonmark.rules.locals.blockquote import (
     BlockquoteLocals,
 )
-from puku_markdown.parser.block.line_descriptor import LineDescriptor
+from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
 from puku_markdown.parser.block.frame_spec import BlockParserFrameSpec
-from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
-from puku_markdown.parser.block.block_stream import BlockParserBlockStream
+from puku_markdown.parser.block.line_descriptor import LineDescriptor
 from puku_markdown.parser.block.logger import logger
-from puku_markdown.elements.block.commonmark.blockquote import Blockquote
+from puku_markdown.parser.block.rule import BlockParserRule
+from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
+from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown.parser.block.state import BlockParserState
 from puku_markdown.persistent_list.transactional_editor import TransactionalEditor
-from puku_markdown.column_resolution import ColnoWithResolution, ColnoResolution
-from puku_markdown.line_span import LineSpan
-from puku_markdown._utils.metrics import commonmark_char_width
-from puku_markdown._utils.predicates import is_space_or_tab
-from puku_markdown._utils.constants import GREATER_THAN_CHARACTER
 
 
 def _try_consume_blockquote_prefix(
@@ -228,17 +228,18 @@ def blockquote_rule(
         if state.is_blank_line(local_attrs.current_lineno):
             break
 
-        if not state.is_line_outdented(local_attrs.current_lineno):
-            if _try_consume_blockquote_prefix(
-                state=state,
-                line_descriptors_editor=local_attrs.line_descriptors_editor,
-                lineno=local_attrs.current_lineno,
-            ):
-                local_attrs.prev_marked_line_was_empty |= state.is_blank_line(
-                    local_attrs.current_lineno
-                )
-                local_attrs.current_lineno += 1
-                continue
+        if (
+            not state.is_line_outdented(local_attrs.current_lineno)
+        ) and _try_consume_blockquote_prefix(
+            state=state,
+            line_descriptors_editor=local_attrs.line_descriptors_editor,
+            lineno=local_attrs.current_lineno,
+        ):
+            local_attrs.prev_marked_line_was_empty |= state.is_blank_line(
+                local_attrs.current_lineno
+            )
+            local_attrs.current_lineno += 1
+            continue
 
         if local_attrs.prev_marked_line_was_empty:
             break

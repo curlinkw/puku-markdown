@@ -1,23 +1,24 @@
-from typing import Self, Union, cast
-from enum import Enum, auto
 from dataclasses import dataclass
+from enum import Enum, auto
 from itertools import chain
+from typing import Self, cast
+
 from markdown_it.token import Token as MarkdownItPyToken
 
 from puku_markdown.elements import (
-    BlockElement,
     AtxHeading,
+    BlockElement,
     Blockquote,
+    Document,
     FencedCodeBlock,
     HtmlBlock,
     IndentedCodeBlock,
+    LinkReferenceDefinition,
     List,
     ListKind,
-    ThematicBreak,
-    SetextHeading,
     Paragraph,
-    LinkReferenceDefinition,
-    Document,
+    SetextHeading,
+    ThematicBreak,
 )
 
 
@@ -75,19 +76,16 @@ class BlockToken:
     kind: BlockTokenKind
     polarity: BlockTokenPolarity
     payload: (
-        Union[
-            ContentPayload,
-            FencedCodeBlockPayload,
-            HeadingPayload,
-            MarkupPayload,
-            ListPayload,
-        ]
+        ContentPayload
+        | FencedCodeBlockPayload
+        | HeadingPayload
+        | MarkupPayload
+        | ListPayload
         | None
     )
 
     @classmethod
     def from_markdown_it_py(cls, tokens: list[MarkdownItPyToken]) -> list[Self]:
-
         def _from_single_token(token: MarkdownItPyToken) -> Self:
             match token.type:
                 case "blockquote_open":

@@ -4,12 +4,13 @@
 import argparse
 import sys
 from pathlib import Path
+
 import requests
 
 from tests.commonmark.spec import (
-    _DEFAULT_VERSION,
     _DEFAULT_JSON_PATH,
     _DEFAULT_TEXT_PATH,
+    _DEFAULT_VERSION,
 )
 
 

@@ -1,7 +1,7 @@
-from tests.markdown_it_py.block_token import BlockToken
-
 from markdown_it import MarkdownIt
 from markdown_it.utils import PresetType
+
+from tests.markdown_it_py.block_token import BlockToken
 
 
 def make_block_commonmark_preset() -> PresetType:
@@ -19,9 +19,9 @@ def make_block_commonmark_preset() -> PresetType:
             # Double + single quotes replacement pairs, when typographer enabled,
             # and smartquotes on. Could be either a String or an Array.
             #
-            # For example, you can use '«»„“' for Russian, '„“‚‘' for German,
-            # and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
-            "quotes": "\u201c\u201d\u2018\u2019",  # /* “”‘’ */
+            # For example, you can use '«»„“' for Russian, '„“‚‘' for German,  # noqa: RUF003
+            # and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).  # noqa: RUF003
+            "quotes": "\u201c\u201d\u2018\u2019",  # /* “”‘’ */  # noqa: RUF003
             # Renderer specific; these options are used directly in the HTML renderer
             "xhtmlOut": True,  # Use '/' to close single tags (<br />)
             "breaks": False,  # Convert '\n' in paragraphs into <br>

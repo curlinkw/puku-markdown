@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
+from puku_markdown.elements.block.commonmark.blockquote import Blockquote
 from puku_markdown.parser.block.line_descriptor import LineDescriptor
 from puku_markdown.persistent_list.transactional_editor import TransactionalEditor
-from puku_markdown.elements.block.commonmark.blockquote import Blockquote
 
 
 @dataclass(slots=True)

@@ -10,15 +10,14 @@ from puku_markdown.elements.block.commonmark import (
     List,
     ListItem,
     ListKind,
-    ThematicBreak,
-    SetextHeading,
     Paragraph,
+    SetextHeading,
+    ThematicBreak,
 )
 
-
 __all__ = [
-    "BlockElement",
     "AtxHeading",
+    "BlockElement",
     "Blockquote",
     "FencedCodeBlock",
     "HtmlBlock",
@@ -28,7 +27,7 @@ __all__ = [
     "List",
     "ListItem",
     "ListKind",
-    "ThematicBreak",
-    "SetextHeading",
     "Paragraph",
+    "SetextHeading",
+    "ThematicBreak",
 ]
