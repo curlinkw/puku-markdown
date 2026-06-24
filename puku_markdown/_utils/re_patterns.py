@@ -73,7 +73,7 @@ _HTML_CDATA = r"<!\[CDATA\[[\s\S]*?\]\]>"
 Regex string for a CDATA section.
 """
 
-HTML_BLOCK_START_RE: re.Pattern = re.compile(
+HTML_BLOCK_START_RE: re.Pattern[str] = re.compile(
     rf"^(?:{_HTML_OPEN_TAG}|{_HTML_CLOSE_TAG}|{_HTML_COMMENT}|{_HTML_PROCESSING_INSTRUCTION}|{_HTML_MARKUP_DECLARATION}|{_HTML_CDATA})",
     re.IGNORECASE,
 )
@@ -94,7 +94,9 @@ _HTML_OPEN_CLOSE_TAG: str = rf"^(?:{_HTML_OPEN_TAG}|{_HTML_CLOSE_TAG})"
 String pattern for opening or closing HTML tags (not compiled).
 """
 
-HTML_OPEN_CLOSE_TAG_RE: re.Pattern = re.compile(_HTML_OPEN_CLOSE_TAG, re.IGNORECASE)
+HTML_OPEN_CLOSE_TAG_RE: re.Pattern[str] = re.compile(
+    _HTML_OPEN_CLOSE_TAG, re.IGNORECASE
+)
 """
 Match an opening or closing HTML tag (including self-closing) at line start.
 
@@ -102,7 +104,7 @@ This regex matches only tags, not comments, PI, declarations, or CDATA.
 It is used for the last (type 7) HTML block rule.
 """
 
-HTML_RAW_TEXT_TAG_OPEN_RE: re.Pattern = re.compile(
+HTML_RAW_TEXT_TAG_OPEN_RE: re.Pattern[str] = re.compile(
     r"^<(script|pre|style|textarea)(?=(\s|>|$))", re.IGNORECASE
 )
 """

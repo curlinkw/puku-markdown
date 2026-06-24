@@ -125,7 +125,7 @@ class BlockParserState:
         # exclude the final fake entry
         self.line_count = len(self.line_descriptors) - 1
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Just compute line boundaries."""
         self._compute_line_descriptors()
 

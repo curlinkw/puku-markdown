@@ -1,0 +1,47 @@
+name: Lint
+
+on:
+  workflow_call:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Ruff & MyPy
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dev dependencies (ruff, mypy, type stubs)
+        run: uv sync --group dev
+
+      - name: Ruff lint (matches pre-commit)
+        run: uv run ruff check puku_markdown/ --no-fix --exit-non-zero-on-fix
+
+      - name: Ruff format check (matches pre-commit)
+        run: uv run ruff format --check --diff puku_markdown/
+
+      - name: MyPy (full strict type checking)
+        run: uv run mypy puku_markdown/

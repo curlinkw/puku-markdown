@@ -178,6 +178,8 @@ def _parse_frame(
         that signals the frame is complete.
     """
 
+    command: BlockParserCommand | None
+
     if current_frame.is_current_rule_suspended:
         command = current_frame.current_rule(
             state, current_frame.actuals, current_frame.expect_current_rule_context()
@@ -258,7 +260,9 @@ def _lookahead_any_rule_matches(
     )
 
 
-def block_parse(state: BlockParserState, initial_rule_chain: BlockParserRuleChain):
+def block_parse(
+    state: BlockParserState, initial_rule_chain: BlockParserRuleChain
+) -> None:
     frames = [
         BlockParserFrame(
             line_span=LineSpan(start_lineno=0, end_lineno=state.line_count),
