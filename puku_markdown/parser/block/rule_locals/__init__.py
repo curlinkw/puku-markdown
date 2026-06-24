@@ -18,7 +18,7 @@ Design decisions:
 
 from typing import TypeVar
 
-from puku_markdown.parser.block.commonmark.rules.locals import (
+from puku_markdown.parser.block.rule_locals.commonmark import (
     BlockquoteLocals,
     LinkReferenceDefinitionLocals,
     ListLocals,
@@ -36,3 +36,14 @@ BlockParserRuleLocals = (
 
 
 BlockParserRuleLocalsT = TypeVar("BlockParserRuleLocalsT", bound=BlockParserRuleLocals)
+
+
+__all__ = [
+    "BlockParserRuleLocals",
+    "BlockParserRuleLocalsT",
+    "BlockquoteLocals",
+    "LinkReferenceDefinitionLocals",
+    "ListLocals",
+    "ParagraphLocals",
+    "SetextHeadingLocals",
+]

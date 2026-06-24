@@ -5,9 +5,6 @@ from puku_markdown.parser.block.command import (
     BlockParserCommand,
     BlockParserCommandKind,
 )
-from puku_markdown.parser.block.commonmark.rules.locals.setext_heading import (
-    SetextHeadingLocals,
-)
 from puku_markdown.parser.block.frame_actuals import BlockParserFrameActuals
 from puku_markdown.parser.block.frame_spec import BlockParserFrameSpec
 from puku_markdown.parser.block.line_descriptor import LineDescriptor
@@ -15,6 +12,9 @@ from puku_markdown.parser.block.logger import logger
 from puku_markdown.parser.block.rule import BlockParserRule
 from puku_markdown.parser.block.rule_chain import BlockParserRuleChain
 from puku_markdown.parser.block.rule_context import BlockParserRuleContext
+from puku_markdown.parser.block.rule_locals import (
+    SetextHeadingLocals,
+)
 from puku_markdown.parser.block.state import BlockParserState
 
 
