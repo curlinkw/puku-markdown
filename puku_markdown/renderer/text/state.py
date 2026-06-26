@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from puku_markdown.renderer.state import RendererState
 
@@ -9,9 +9,11 @@ class TextRendererState(RendererState):
     Mutable rendering context for sequential, iterative (non-recursive) AST traversal.
     """
 
-    rendered_text: str
+    rendered_text_parts: list[str] = field(default_factory=list)
     """
-    The accumulated rendered output text.
+    Accumulates rendered string parts. Joining these parts at the end of the
+    render pass yields the final output text. Use `''.join(rendered_text_parts)`
+    for O(n) performance instead of repeated `str +=` concatenation.
     """
 
     inherited_prefix: str = ""

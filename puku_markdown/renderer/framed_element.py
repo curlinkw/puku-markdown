@@ -13,12 +13,16 @@ class RendererFramedElement(NamedTuple):
     when both need to be stored together (e.g., in a stack).
     """
 
-    frame: RendererFrame
-    """
-    The traversal frame tracking the current position.
-    """
-
     element: Element
     """
     The AST element that owns this frame.
+    """
+
+    frame: RendererFrame | None = None
+    """
+    The traversal frame tracking the current position.
+
+    If `None`, this indicates that the element is a **leaf** (i.e., it has no
+    children to traverse). Leaf elements do not require a frame to maintain
+    iteration state; they are processed immediately on entry.
     """
