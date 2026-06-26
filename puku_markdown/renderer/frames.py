@@ -42,6 +42,24 @@ class SequentialRendererFrame(RendererFrame):
     each child is consumed.
     """
 
+    def increment_child_index(self) -> None:
+        """
+        Increments `current_child_index` by 1.
+        """
+        self.current_child_index += 1
+
+    @property
+    def has_more_children(self) -> bool:
+        """
+        Returns `True` if the current child index is within the valid range.
+
+        Equivalent to `self.current_child_index < self.child_count`. This check
+        determines whether there is a child at the current index that still
+        needs to be processed. If `False`, traversal of this node's children
+        is complete.
+        """
+        return self.current_child_index < self.child_count
+
     @classmethod
     def from_children(cls, children: Sized, start_child_index: int = 0) -> Self:
         """
@@ -97,3 +115,49 @@ class SegmentedRendererFrame(RendererFrame):
     The index of the next child inside the current segment (0-based).
     Represents the inner loop position. Incremented per child consumed.
     """
+
+    @property
+    def has_more_children(self) -> bool:
+        """
+        Returns `True` if the current indices point to a valid child.
+
+        This method checks **both** bounds:
+        1. `current_segment_index` is within the range of available segments.
+        2. `current_child_index` is within the range of children for that segment.
+
+        If either condition fails, there is no child available at the current
+        traversal position.
+
+        Equivalent to:
+            (self.current_segment_index < self.segment_count and
+             self.current_child_index < self.segment_child_counts[self.current_segment_index])
+        """
+        if self.current_segment_index >= self.segment_count:
+            return False
+        return (
+            self.current_child_index
+            < self.segment_child_counts[self.current_segment_index]
+        )
+
+    def advance_to_next_child(self) -> None:
+        """
+        Advances the traversal to the next logical child.
+
+        If the current child is not the last in the current segment, this
+        increments `current_child_index`. If it is the last child, this
+        advances to the next segment (incrementing `current_segment_index`
+        and resetting `current_child_index` to `0`).
+
+        This method is a no-op if `has_more_children()` is `False`.
+        """
+        if not self.has_more_children:
+            return
+
+        self.current_child_index += 1
+
+        if self.current_segment_index < self.segment_count and (
+            self.current_child_index
+            >= self.segment_child_counts[self.current_segment_index]
+        ):
+            self.current_segment_index += 1
+            self.current_child_index = 0

@@ -4,7 +4,7 @@ from puku_markdown.renderer.state import RendererState
 from puku_markdown.renderer.text.state import TextRendererState
 
 
-def _render_atx_heading(
+def _atx_heading_enter_hook(
     framed_element: RendererFramedElement, state: RendererState
 ) -> RendererFramedElement | None:
     element = framed_element.element

@@ -16,6 +16,7 @@ from puku_markdown.elements import (
     ThematicBreak,
 )
 from puku_markdown.parser import parse
+from puku_markdown.renderer import render_to_text
 
 __all__ = [
     "AtxHeading",
@@ -34,4 +35,5 @@ __all__ = [
     "SetextHeading",
     "ThematicBreak",
     "parse",
+    "render_to_text",
 ]
