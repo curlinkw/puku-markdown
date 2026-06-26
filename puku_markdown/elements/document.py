@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
 
+from puku_markdown.elements.base import Element
 from puku_markdown.elements.block.base import BlockElement
 
 
 @dataclass(slots=True)
-class Document:
+class Document(Element):
     """
     Root container of a parsed Markdown document.
     """

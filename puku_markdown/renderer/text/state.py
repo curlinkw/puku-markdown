@@ -1,10 +1,17 @@
 from dataclasses import dataclass
 
+from puku_markdown.renderer.state import RendererState
+
 
 @dataclass(slots=True)
-class TextRendererState:
+class TextRendererState(RendererState):
     """
     Mutable rendering context for sequential, iterative (non-recursive) AST traversal.
+    """
+
+    rendered_text: str
+    """
+    The accumulated rendered output text.
     """
 
     inherited_prefix: str = ""

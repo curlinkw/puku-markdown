@@ -1,3 +1,4 @@
+from puku_markdown.elements.base import Element
 from puku_markdown.elements.block import (
     AtxHeading,
     BlockElement,
@@ -21,6 +22,7 @@ __all__ = [
     "BlockElement",
     "Blockquote",
     "Document",
+    "Element",
     "FencedCodeBlock",
     "HtmlBlock",
     "HtmlBlockKind",
