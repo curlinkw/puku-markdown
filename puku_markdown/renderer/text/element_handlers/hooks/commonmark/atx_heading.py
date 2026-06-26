@@ -13,6 +13,6 @@ def _render_atx_heading(
     assert framed_element.frame is None
     assert isinstance(state, TextRendererState)
 
-    state.rendered_text_parts.extend(("#" * element.level, " ", element.content))
+    state.write_parts("#" * element.level, " ", element.content)
 
     return None
