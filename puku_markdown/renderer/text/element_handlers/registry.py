@@ -1,7 +1,16 @@
 from collections.abc import Mapping
 from types import MappingProxyType
 
-from puku_markdown.elements import AtxHeading, Blockquote, Document, Element
+from puku_markdown.elements import (
+    AtxHeading,
+    Blockquote,
+    Document,
+    Element,
+    FencedCodeBlock,
+    HtmlBlock,
+    IndentedCodeBlock,
+    LinkReferenceDefinition,
+)
 from puku_markdown.renderer.element_handler import RendererElementHandler
 from puku_markdown.renderer.text.element_handlers.hooks import (
     _atx_heading_enter_hook,
@@ -12,6 +21,10 @@ from puku_markdown.renderer.text.element_handlers.hooks import (
     _document_after_child_hook,
     _document_enter_hook,
     _document_init_frame_hook,
+    _fenced_code_block_enter_hook,
+    _html_block_enter_hook,
+    _indented_code_block_enter_hook,
+    _link_reference_definition_block_enter_hook,
 )
 
 _TEXT_RENDERER_ELEMENT_HANDLERS: dict[type[Element], RendererElementHandler] = {
@@ -32,6 +45,30 @@ _TEXT_RENDERER_ELEMENT_HANDLERS: dict[type[Element], RendererElementHandler] = {
         after_child_hook=_blockquote_after_child_hook,
         exit_hook=_blockquote_exit_hook,
         init_frame_hook=_blockquote_init_frame_hook,
+    ),
+    FencedCodeBlock: RendererElementHandler(
+        enter_hook=_fenced_code_block_enter_hook,
+        after_child_hook=None,
+        exit_hook=None,
+        init_frame_hook=None,
+    ),
+    HtmlBlock: RendererElementHandler(
+        enter_hook=_html_block_enter_hook,
+        after_child_hook=None,
+        exit_hook=None,
+        init_frame_hook=None,
+    ),
+    IndentedCodeBlock: RendererElementHandler(
+        enter_hook=_indented_code_block_enter_hook,
+        after_child_hook=None,
+        exit_hook=None,
+        init_frame_hook=None,
+    ),
+    LinkReferenceDefinition: RendererElementHandler(
+        enter_hook=_link_reference_definition_block_enter_hook,
+        after_child_hook=None,
+        exit_hook=None,
+        init_frame_hook=None,
     ),
 }
 
