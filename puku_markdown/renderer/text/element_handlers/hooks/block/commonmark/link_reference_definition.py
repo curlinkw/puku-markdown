@@ -16,6 +16,6 @@ def _link_reference_definition_block_enter_hook(
     state.write_parts(
         f"[{element.label}]: ", f"<{element.href}> ", f'"{element.title}"'
     )
-    state.write_part("\n", prepend_inherited_prefix=False)
+    state.write_newline()
 
     return None

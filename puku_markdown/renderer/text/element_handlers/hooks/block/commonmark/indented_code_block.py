@@ -15,6 +15,6 @@ def _indented_code_block_enter_hook(
     assert isinstance(state, TextRendererState)
 
     state.write_parts(" " * INDENTED_CODE_BLOCK_MIN_INDENT, element.content)
-    state.write_part("\n", prepend_inherited_prefix=False)
+    state.write_newline()
 
     return None

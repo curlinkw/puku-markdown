@@ -14,6 +14,6 @@ def _atx_heading_enter_hook(
     assert isinstance(state, TextRendererState)
 
     state.write_parts("#" * element.level, " ", element.content)
-    state.write_part("\n", prepend_inherited_prefix=False)
+    state.write_newline()
 
     return None

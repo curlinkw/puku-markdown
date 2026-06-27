@@ -19,6 +19,6 @@ def _fenced_code_block_enter_hook(
         "\n",
         element.content,
     )
-    state.write_part("\n", prepend_inherited_prefix=False)
+    state.write_newline()
 
     return None

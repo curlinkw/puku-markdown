@@ -13,7 +13,11 @@ def _paragraph_enter_hook(
     assert framed_element.frame is None
     assert isinstance(state, TextRendererState)
 
+    if state.is_after_paragraph:
+        state.write_part("\n")
+
     state.write_parts(element.content)
-    state.write_part("\n", prepend_inherited_prefix=False)
+    state.write_newline()
+    state.mark_after_last_paragraph()
 
     return None

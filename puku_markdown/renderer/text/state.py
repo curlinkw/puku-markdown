@@ -37,6 +37,34 @@ class TextRendererState(RendererState):
         (e.g., `"1. "`) is handled separately by the block's own rendering logic.
     """
 
+    after_last_paragraph_lineno: int | None = None
+    """
+    Line index in `rendered_text_lines` after the last completed paragraph, or `None`
+    if no paragraph has been rendered yet.
+
+    Used to prevent consecutive paragraphs from collapsing.
+    """
+
+    @property
+    def is_after_paragraph(self) -> bool:
+        """
+        Returns `True` if the buffer ends with the trailing blank line of a paragraph.
+        """
+        return (
+            self.after_last_paragraph_lineno is not None
+            and self.after_last_paragraph_lineno == len(self.rendered_text_lines) - 1
+        )
+
+    def mark_after_last_paragraph(self) -> None:
+        """
+        Records the index of the trailing blank line as the boundary after the last paragraph.
+
+        Assumes that the last line in `rendered_text_lines` is the blank line
+        (``""``) that terminates the current paragraph. This marker points
+        directly to that line.
+        """
+        self.after_last_paragraph_lineno = len(self.rendered_text_lines) - 1
+
     def write_parts(self, *parts: str, prepend_inherited_prefix: bool = True) -> None:
         """Writes string parts, handling line continuations and inherited prefixes.
 
@@ -112,6 +140,33 @@ class TextRendererState(RendererState):
             >>> # Equivalent to: self.write_parts("Hello world")
         """
         self.write_parts(part, prepend_inherited_prefix=prepend_inherited_prefix)
+
+    def write_newline(self) -> None:
+        """Moves the cursor to the beginning of the next line without writing content.
+
+        This method is a convenience wrapper around
+        ``write_parts("\n", prepend_inherited_prefix=False)``. It finalises the
+        current line (if any) and positions the writer so that the **next**
+        ``write_parts()`` call will start writing on a fresh, empty line.
+
+        Important semantics:
+            - This method **unconditionally** advances to a new line. If the last
+            line in the buffer is already empty, calling this method appends
+            **another** empty line (i.e., it inserts an extra newline in the
+            output).
+            - The inherited prefix is **never** prepended to the empty line,
+            because this operation represents a line break, not content that
+            should receive prefixing.
+            - This is the equivalent of pressing "Enter" in a text editor without
+            typing any characters.
+
+        Use this method when you need to force a line break in the output, such as:
+            - Separating blocks of content.
+            - Moving to a new line before writing an empty line.
+            - Implementing line-based rendering where manual newline control is
+            required.
+        """
+        self.write_parts("\n", prepend_inherited_prefix=False)
 
     def push_prefix_parts(self, *parts: str) -> None:
         """
