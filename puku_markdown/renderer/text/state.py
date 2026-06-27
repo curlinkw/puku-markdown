@@ -37,34 +37,6 @@ class TextRendererState(RendererState):
         (e.g., `"1. "`) is handled separately by the block's own rendering logic.
     """
 
-    after_last_paragraph_lineno: int | None = None
-    """
-    Line index in `rendered_text_lines` after the last completed paragraph, or `None`
-    if no paragraph has been rendered yet.
-
-    Used to prevent consecutive paragraphs from collapsing.
-    """
-
-    @property
-    def is_after_paragraph(self) -> bool:
-        """
-        Returns `True` if the buffer ends with the trailing blank line of a paragraph.
-        """
-        return (
-            self.after_last_paragraph_lineno is not None
-            and self.after_last_paragraph_lineno == len(self.rendered_text_lines) - 1
-        )
-
-    def mark_after_last_paragraph(self) -> None:
-        """
-        Records the index of the trailing blank line as the boundary after the last paragraph.
-
-        Assumes that the last line in `rendered_text_lines` is the blank line
-        (``""``) that terminates the current paragraph. This marker points
-        directly to that line.
-        """
-        self.after_last_paragraph_lineno = len(self.rendered_text_lines) - 1
-
     def write_parts(self, *parts: str, prepend_inherited_prefix: bool = True) -> None:
         """Writes string parts, handling line continuations and inherited prefixes.
 

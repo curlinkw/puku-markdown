@@ -76,7 +76,7 @@ def _list_after_child_hook(
         state.pop_prefix_parts(count=1)
 
     if not element.is_tight:
-        state.write_part("\n", prepend_inherited_prefix=False)
+        state.write_newline()
 
     frame.advance_to_next_child()
 
