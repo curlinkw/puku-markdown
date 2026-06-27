@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from puku_markdown.elements import Document
 from puku_markdown.renderer.framed_element import RendererFramedElement
-from puku_markdown.renderer.frames import SequentialRendererFrame
 from puku_markdown.renderer.state import RendererState
 from puku_markdown.renderer.type_aliases import RendererElementHandlerRegistry
 
@@ -52,7 +51,6 @@ def render(
     framed_element_entries: list[_RendererFramedElementEntry] = [
         _RendererFramedElementEntry(
             framed_element=RendererFramedElement(
-                frame=SequentialRendererFrame.from_children(document.root_blocks),
                 element=document,
             ),
             is_entering=True,
@@ -66,6 +64,11 @@ def render(
         current_element_handler = element_handler_registry[
             type(current_framed_element.element)
         ]
+
+        if is_entering:
+            current_element_handler.try_call_init_frame_hook(
+                framed_element=current_framed_element, state=state
+            )
 
         if (
             next_framed_element := (

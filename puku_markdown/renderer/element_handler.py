@@ -42,6 +42,17 @@ class RendererElementHandler:
     This hook is optional; if `None`, the node does nothing on exit.
     """
 
+    init_frame_hook: Callable[[RendererFramedElement, RendererState], None] | None = (
+        None
+    )
+    """
+    Initializes the `frame` field of the provided `RendererFramedElement`.
+
+    Based on the element's AST structure, constructs the appropriate frame type
+    and assigns it to `framed_element.frame`. If the element is a leaf, it may
+    set `framed_element.frame = None` (or leave the existing `None`).
+    """
+
     def call_enter_hook(
         self, framed_element: RendererFramedElement, state: RendererState
     ) -> RendererFramedElement | None:
@@ -79,3 +90,16 @@ class RendererElementHandler:
         """
         if self.exit_hook is not None:
             self.exit_hook(framed_element, state)
+
+    def try_call_init_frame_hook(
+        self, framed_element: RendererFramedElement, state: RendererState
+    ) -> None:
+        """
+        Attempts to call the optional `init_frame_hook`.
+
+        If the hook is registered, it is invoked to initialize the `frame` field
+        of the provided framed element. If no hook is provided, this method does
+        nothing.
+        """
+        if self.init_frame_hook is not None:
+            self.init_frame_hook(framed_element, state)

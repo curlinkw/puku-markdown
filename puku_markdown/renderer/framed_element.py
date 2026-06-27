@@ -1,10 +1,11 @@
-from typing import NamedTuple
+from dataclasses import dataclass
 
 from puku_markdown.elements import Element
 from puku_markdown.renderer.frames import RendererFrame
 
 
-class RendererFramedElement(NamedTuple):
+@dataclass(slots=True)
+class RendererFramedElement:
     """
     An AST Element paired with its associated traversal Frame.
 
@@ -20,9 +21,13 @@ class RendererFramedElement(NamedTuple):
 
     frame: RendererFrame | None = None
     """
-    The traversal frame tracking the current position.
+    The traversal frame tracking the current iteration position.
 
-    If `None`, this indicates that the element is a **leaf** (i.e., it has no
-    children to traverse). Leaf elements do not require a frame to maintain
-    iteration state; they are processed immediately on entry.
+    This field may be `None` for two reasons:
+    1. The element is a **leaf** (it has no children to traverse).
+    2. The frame has **not yet been initialized** (the frame factory hook
+       has not been called, as controlled by the traversal flow).
+
+    In the second case, the frame will be created later during the traversal
+    when the element's children are about to be processed.
     """
