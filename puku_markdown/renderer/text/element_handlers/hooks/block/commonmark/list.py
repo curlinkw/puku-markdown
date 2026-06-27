@@ -16,6 +16,7 @@ def _list_init_frame_hook(
     framed_element.frame = SegmentedRendererFrame(
         segment_count=len(element.items),
         segment_child_counts=[len(item.children) for item in element.items],
+        last_child_type=None,
     )
 
     return None

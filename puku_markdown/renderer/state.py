@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from puku_markdown.elements import Element
+
 
 @dataclass(slots=True)
 class RendererState:
@@ -12,4 +14,10 @@ class RendererState:
     in a dedicated subclass.
     """
 
-    pass
+    previous_sibling_type: type[Element] | None
+    """
+    The class of the immediately preceding sibling block, or `None` if none exists.
+
+    Used to determine whether a separator (e.g., a blank line) is needed before
+    the next block.
+    """

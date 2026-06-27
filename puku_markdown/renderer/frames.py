@@ -2,6 +2,8 @@ from collections.abc import Sized
 from dataclasses import dataclass
 from typing import Self
 
+from puku_markdown.elements import Element
+
 
 @dataclass(slots=True)
 class RendererFrame:
@@ -17,7 +19,11 @@ class RendererFrame:
         specifying how children are structured and consumed.
     """
 
-    pass
+    last_child_type: type[Element] | None
+    """
+    The class of the most recently processed child block within this frame, or `None`
+    if no child has been processed yet.
+    """
 
 
 @dataclass(slots=True)
@@ -74,7 +80,11 @@ class SequentialRendererFrame(RendererFrame):
             start_child_index: The index from which traversal should begin.
                 Defaults to 0.
         """
-        return cls(child_count=len(children), current_child_index=start_child_index)
+        return cls(
+            child_count=len(children),
+            current_child_index=start_child_index,
+            last_child_type=None,
+        )
 
 
 @dataclass(slots=True)

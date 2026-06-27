@@ -87,8 +87,16 @@ def render(
             framed_element_entries.pop()
             continue
 
+        current_frame = current_framed_element.frame
+
+        if current_frame is None:
+            raise RuntimeError("Cannot enter child: no active renderer frame.")
+
         framed_element_entries.append(
             _RendererFramedElementEntry(
                 framed_element=next_framed_element, is_entering=True
             )
         )
+
+        state.previous_sibling_type = current_frame.last_child_type
+        current_frame.last_child_type = type(next_framed_element.element)

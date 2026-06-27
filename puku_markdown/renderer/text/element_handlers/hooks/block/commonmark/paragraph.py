@@ -13,6 +13,9 @@ def _paragraph_enter_hook(
     assert framed_element.frame is None
     assert isinstance(state, TextRendererState)
 
+    if state.previous_sibling_type is Paragraph:
+        state.write_part("\n")
+
     state.write_parts(element.content)
     state.write_newline()
 

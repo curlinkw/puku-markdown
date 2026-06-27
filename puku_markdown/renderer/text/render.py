@@ -7,7 +7,7 @@ from puku_markdown.renderer.text.state import TextRendererState
 def render_to_text(
     document: Document,
 ) -> str:
-    state = TextRendererState()
+    state = TextRendererState(previous_sibling_type=None)
     render(
         document=document,
         state=state,
