@@ -16,39 +16,44 @@ class TextRendererState(RendererState):
     for O(n) performance instead of repeated `str +=` concatenation.
     """
 
-    inherited_prefix: str = ""
+    inherited_prefix_parts: list[str] = field(default_factory=list)
     """
-    String reconstruction of all ancestor block markers on the current line.
+    Accumulates string parts representing all ancestor block markers.
+
+    This replaces a single `str` prefix to avoid repeated string concatenation
+    when entering/exiting nested blocks. Each block appends its marker part
+    (e.g., `"> "`, `"1. "`) on enter, and pops it on exit.
 
     Parser Counterpart (`LineDescriptor`):
         For the current block, the ancestors' markers occupy the source
         characters *immediately preceding* `line_start_charno`.
 
         While the parser uses `line_start_charno` to numerically skip these
-        characters and isolate the current block's marker/content, the renderer
-        uses `inherited_prefix` to literally re-insert that skipped text at the
-        beginning of every output line generated for this block.
+        characters, the renderer accumulates them as parts to be prepended
+        to every output line generated for this block.
 
     Note:
-        This prefix contains only ancestors. The current block's own marker
-        (e.g., `"1. "`) is NOT included here; it is added separately when
-        the renderer processes the current block's frame.
+        This list contains only ancestor markers. The current block's own marker
+        (e.g., `"1. "`) is handled separately by the block's own rendering logic.
     """
 
     def write_parts(self, *parts: str) -> None:
         """
         Writes one or more string parts to the output buffer.
 
-        If `inherited_prefix` is non-empty, it is automatically prepended as the
-        first part of this write operation. The prefix is **not** consumed or
-        cleared; it will be prepended again on every subsequent call to
-        `write_parts` or `write_part`.
+        If `inherited_prefix_parts` is non-empty, its parts are automatically
+        prepended as the first parts of this write operation. The prefix parts
+        are **not** consumed or cleared; they are prepended on every call.
 
         This method is designed for writing a complete logical unit (typically
         a single line of output). Use it for block-level content.
+
+        Example:
+            state.write_parts("#", " ", "Hello")
+            # If inherited_prefix_parts == ["> "], outputs "> # Hello"
         """
-        if self.inherited_prefix:
-            self.rendered_text_parts.append(self.inherited_prefix)
+        if self.inherited_prefix_parts:
+            self.rendered_text_parts.extend(self.inherited_prefix_parts)
         self.rendered_text_parts.extend(parts)
 
     def write_part(self, part: str) -> None:
@@ -56,6 +61,52 @@ class TextRendererState(RendererState):
         Writes a single string part to the output buffer.
 
         If `inherited_prefix` is non-empty, it is automatically prepended.
-        The prefix is **not** consumed or cleared.
         """
         self.write_parts(part)
+
+    def push_prefix_parts(self, *parts: str) -> None:
+        """
+        Pushes one or more prefix parts onto the `inherited_prefix_parts` stack.
+
+        Called when entering a block that contributes to the line prefix
+        (e.g., blockquote adds `"> "`, ordered list adds `"1. "`).
+
+        Example:
+            state.push_prefix_parts("> ")          # Enter blockquote
+            state.push_prefix_parts("1. ", " ")    # Enter ordered list item
+        """
+        self.inherited_prefix_parts.extend(parts)
+
+    def pop_prefix_parts(self, count: int = 1) -> list[str]:
+        """
+        Pops `count` parts from the `inherited_prefix_parts` stack.
+
+        Called when exiting blocks that contributed to the line prefix.
+        The number of parts popped must match the number passed to the
+        corresponding `push_prefix_parts` call for that block.
+
+        Args:
+            count: The number of parts to pop. Defaults to 1.
+
+        Returns:
+            The removed prefix parts, in LIFO order (last pushed first).
+
+        Raises:
+            IndexError: If the stack does not contain at least `count` elements.
+            ValueError: If `count` is less than 1.
+
+        Example:
+            state.push_prefix_parts("1.", " ")   # Push 2 parts.
+            ...
+            state.pop_prefix_parts(2)            # Pop exactly 2 parts.
+        """
+        if count < 1:
+            raise ValueError("count must be >= 1")
+        if len(self.inherited_prefix_parts) < count:
+            raise IndexError(
+                f"Cannot pop {count} parts; only {len(self.inherited_prefix_parts)} available."
+            )
+
+        popped = self.inherited_prefix_parts[-count:]
+        del self.inherited_prefix_parts[-count:]
+        return popped
