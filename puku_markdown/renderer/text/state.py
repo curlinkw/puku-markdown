@@ -9,11 +9,11 @@ class TextRendererState(RendererState):
     Mutable rendering context for sequential, iterative (non-recursive) AST traversal.
     """
 
-    rendered_text_parts: list[str] = field(default_factory=list)
+    rendered_text_lines: list[str] = field(default_factory=list)
     """
-    Accumulates rendered string parts. Joining these parts at the end of the
-    render pass yields the final output text. Use `''.join(rendered_text_parts)`
-    for O(n) performance instead of repeated `str +=` concatenation.
+    Accumulates fully rendered lines. Each entry is a complete line of output
+    (including any inherited prefix). Use `'\n'.join(rendered_text_lines)` to obtain
+    the final output.
     """
 
     inherited_prefix_parts: list[str] = field(default_factory=list)
@@ -37,32 +37,81 @@ class TextRendererState(RendererState):
         (e.g., `"1. "`) is handled separately by the block's own rendering logic.
     """
 
-    def write_parts(self, *parts: str) -> None:
+    def write_parts(self, *parts: str, prepend_inherited_prefix: bool = True) -> None:
+        """Writes string parts, handling line continuations and inherited prefixes.
+
+        This method is the core line-builder for the renderer. It joins the input
+        `parts`, splits the result by newline (``\n``), and routes each segment
+        to the output buffer with the following rules:
+
+        **First segment** (text before the first newline):
+            - If the buffer is **empty**: the segment starts a new line and
+            receives the inherited prefix.
+            - If the buffer has a **non-empty** last line: the segment is appended
+            to that line **without** adding the inherited prefix.
+            - If the buffer has an **empty** last line: the segment is appended
+            to that empty line, but **the inherited prefix is prepended** to it.
+            (This effectively turns an existing blank line into a properly
+            prefixed line.)
+
+        **Subsequent segments** (each line after the first newline):
+            - Each segment starts a new line. These new lines always receive the
+            inherited prefix (if `prepend_inherited_prefix` is `True`).
+
+        The inherited prefix (``''.join(self.inherited_prefix_parts)``) is applied
+        only when a line is *newly created* (buffer empty) or *reactivated from
+        a blank line* (last line empty). It is **never** applied when appending
+        to an existing no-empty line.
+
+        Args:
+            *parts: Variable number of string fragments to join and write.
+            prepend_inherited_prefix: If `True`, the inherited prefix is applied
+                to all newly created lines (buffer empty, last line empty, or any
+                line after the first newline). Defaults to `True`.
+
+        Returns:
+            None.
         """
-        Writes one or more string parts to the output buffer.
+        content = "".join(parts)
 
-        If `inherited_prefix_parts` is non-empty, its parts are automatically
-        prepended as the first parts of this write operation. The prefix parts
-        are **not** consumed or cleared; they are prepended on every call.
+        if not content:
+            return
 
-        This method is designed for writing a complete logical unit (typically
-        a single line of output). Use it for block-level content.
+        lines = content.split("\n")
+        first_line = lines[0]
+
+        inherited_prefix = (
+            "".join(self.inherited_prefix_parts) if prepend_inherited_prefix else ""
+        )
+
+        if self.rendered_text_lines:
+            prefix_for_first = "" if self.rendered_text_lines[-1] else inherited_prefix
+            self.rendered_text_lines[-1] += prefix_for_first + first_line
+        else:
+            self.rendered_text_lines.append(inherited_prefix + first_line)
+
+        self.rendered_text_lines.extend(inherited_prefix + line for line in lines[1:])
+        return None
+
+    def write_part(self, part: str, prepend_inherited_prefix: bool = True) -> None:
+        """Writes a single string part as a logical unit.
+
+        This is a convenience wrapper around `write_parts()` for the common case
+        of writing a single fragment. See `write_parts()` for detailed behavior
+        regarding line continuation, newline splitting, and prefix handling.
+
+        Args:
+            part: The string fragment to write.
+            prepend_inherited_prefix: Passed through to `write_parts()`.
+
+        Returns:
+            None.
 
         Example:
-            state.write_parts("#", " ", "Hello")
-            # If inherited_prefix_parts == ["> "], outputs "> # Hello"
+            >>> self.write_part("Hello world")
+            >>> # Equivalent to: self.write_parts("Hello world")
         """
-        if self.inherited_prefix_parts:
-            self.rendered_text_parts.extend(self.inherited_prefix_parts)
-        self.rendered_text_parts.extend(parts)
-
-    def write_part(self, part: str) -> None:
-        """
-        Writes a single string part to the output buffer.
-
-        If `inherited_prefix` is non-empty, it is automatically prepended.
-        """
-        self.write_parts(part)
+        self.write_parts(part, prepend_inherited_prefix=prepend_inherited_prefix)
 
     def push_prefix_parts(self, *parts: str) -> None:
         """

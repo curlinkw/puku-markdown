@@ -14,5 +14,6 @@ def _html_block_enter_hook(
     assert isinstance(state, TextRendererState)
 
     state.write_part(element.content)
+    state.write_part("\n", prepend_inherited_prefix=False)
 
     return None

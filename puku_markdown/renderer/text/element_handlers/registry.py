@@ -10,6 +10,8 @@ from puku_markdown.elements import (
     HtmlBlock,
     IndentedCodeBlock,
     LinkReferenceDefinition,
+    List,
+    Paragraph,
 )
 from puku_markdown.renderer.element_handler import RendererElementHandler
 from puku_markdown.renderer.text.element_handlers.hooks import (
@@ -25,6 +27,10 @@ from puku_markdown.renderer.text.element_handlers.hooks import (
     _html_block_enter_hook,
     _indented_code_block_enter_hook,
     _link_reference_definition_block_enter_hook,
+    _list_after_child_hook,
+    _list_enter_hook,
+    _list_init_frame_hook,
+    _paragraph_enter_hook,
 )
 
 _TEXT_RENDERER_ELEMENT_HANDLERS: dict[type[Element], RendererElementHandler] = {
@@ -66,6 +72,18 @@ _TEXT_RENDERER_ELEMENT_HANDLERS: dict[type[Element], RendererElementHandler] = {
     ),
     LinkReferenceDefinition: RendererElementHandler(
         enter_hook=_link_reference_definition_block_enter_hook,
+        after_child_hook=None,
+        exit_hook=None,
+        init_frame_hook=None,
+    ),
+    List: RendererElementHandler(
+        enter_hook=_list_enter_hook,
+        after_child_hook=_list_after_child_hook,
+        exit_hook=None,
+        init_frame_hook=_list_init_frame_hook,
+    ),
+    Paragraph: RendererElementHandler(
+        enter_hook=_paragraph_enter_hook,
         after_child_hook=None,
         exit_hook=None,
         init_frame_hook=None,

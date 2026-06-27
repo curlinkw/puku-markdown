@@ -106,6 +106,19 @@ See Also:
     https://spec.commonmark.org/0.31.2/#indented-code-blocks
 """
 
+INDENTED_CODE_BLOCK_MIN_INDENT_STR: Final[str] = " " * INDENTED_CODE_BLOCK_MIN_INDENT
+"""The string representation of the minimum indentation for an indented code block.
+
+This constant provides the literal four-space string (`"    "`). It is
+derived from `INDENTED_CODE_BLOCK_MIN_INDENT` to guarantee consistency
+between the numeric threshold and the actual characters used for string
+operations.
+
+See Also:
+    CommonMark Spec 0.31.2, Section 4.4:
+    https://spec.commonmark.org/0.31.2/#indented-code-blocks
+"""
+
 THEMATIC_BREAK_MARKERS: Final[frozenset[str]] = frozenset({"*", "-", "_"})
 """
 Immutable set of characters that can initiate a CommonMark thematic break.

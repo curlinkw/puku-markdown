@@ -13,4 +13,4 @@ def render_to_text(
         state=state,
         element_handler_registry=TEXT_RENDERER_ELEMENT_HANDLERS,
     )
-    return "".join(state.rendered_text_parts)
+    return "\n".join(state.rendered_text_lines)

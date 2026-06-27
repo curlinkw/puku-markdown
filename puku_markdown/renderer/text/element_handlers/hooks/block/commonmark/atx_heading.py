@@ -13,6 +13,7 @@ def _atx_heading_enter_hook(
     assert framed_element.frame is None
     assert isinstance(state, TextRendererState)
 
-    state.write_parts("#" * element.level, " ", element.content, "\n")
+    state.write_parts("#" * element.level, " ", element.content)
+    state.write_part("\n", prepend_inherited_prefix=False)
 
     return None
