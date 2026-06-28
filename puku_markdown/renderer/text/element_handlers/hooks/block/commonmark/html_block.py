@@ -15,6 +15,6 @@ def _html_block_enter_hook(
 
     state.separate_from_previous_sibling()
     state.write_part(element.content)
-    state.write_newline()
+    state.write_empty_line()
 
     return None

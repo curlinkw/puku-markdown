@@ -1,4 +1,6 @@
-from puku_markdown._utils.constants import INDENTED_CODE_BLOCK_MIN_INDENT_STR
+from puku_markdown._utils.constants import (
+    INDENTED_CODE_BLOCK_MIN_INDENT,
+)
 from puku_markdown.elements import Element, List
 from puku_markdown.renderer.framed_element import RendererFramedElement
 from puku_markdown.renderer.frames import SegmentedRendererFrame
@@ -30,14 +32,16 @@ def _render_current_child(
         frame.current_child_index
     ]
 
-    if isinstance(current_child, List):
-        state.write_part(INDENTED_CODE_BLOCK_MIN_INDENT_STR)
-        state.push_prefix_parts(INDENTED_CODE_BLOCK_MIN_INDENT_STR)
-    else:
+    if frame.is_current_child_first_in_segment:
         marker_number = element.items[frame.current_segment_index].marker_number
         marker_number_str = "" if marker_number is None else str(marker_number)
+        marker_str = f"{marker_number_str}{element.marker_char} "
 
-        state.write_part(f"{marker_number_str}{element.marker_char} ")
+        state.write_part(marker_str)
+
+        state.push_prefix_parts(
+            " " * (INDENTED_CODE_BLOCK_MIN_INDENT - len(marker_str))
+        )
 
     return current_child
 
@@ -70,15 +74,11 @@ def _list_after_child_hook(
     assert isinstance(frame, SegmentedRendererFrame)
     assert isinstance(state, TextRendererState)
 
-    current_child = element.items[frame.current_segment_index].children[
-        frame.current_child_index
-    ]
-
-    if isinstance(current_child, List):
+    if frame.is_current_child_last_in_segment:
         state.pop_prefix_parts(count=1)
 
-    if not element.is_tight:
-        state.write_newline()
+        if not element.is_tight:
+            state.write_empty_line()
 
     frame.advance_to_next_child()
 

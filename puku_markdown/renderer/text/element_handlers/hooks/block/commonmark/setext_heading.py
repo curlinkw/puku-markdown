@@ -20,6 +20,6 @@ def _setext_heading_enter_hook(
         "\n",
         element.marker * DEFAULT_SETEXT_HEADING_MARKER_LENGTH,
     )
-    state.write_newline()
+    state.write_empty_line()
 
     return None

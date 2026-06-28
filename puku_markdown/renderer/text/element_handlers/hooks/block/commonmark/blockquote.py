@@ -1,4 +1,4 @@
-from puku_markdown.elements import Blockquote
+from puku_markdown.elements import Blockquote, Paragraph
 from puku_markdown.renderer.framed_element import RendererFramedElement
 from puku_markdown.renderer.frames import SequentialRendererFrame
 from puku_markdown.renderer.state import RendererState
@@ -32,9 +32,14 @@ def _blockquote_enter_hook(
 
     state.separate_from_previous_sibling()
 
-    state.push_prefix_parts("> ")
+    current_element = element.children[frame.current_child_index]
 
-    return RendererFramedElement(element=element.children[frame.current_child_index])
+    if frame.is_current_child_last and isinstance(current_element, Paragraph):
+        state.write_part("> ")
+    else:
+        state.push_prefix_parts("> ")
+
+    return RendererFramedElement(element=current_element)
 
 
 def _blockquote_after_child_hook(
@@ -52,7 +57,13 @@ def _blockquote_after_child_hook(
     if not frame.has_more_children:
         return None
 
-    return RendererFramedElement(element=element.children[frame.current_child_index])
+    current_element = element.children[frame.current_child_index]
+
+    if frame.is_current_child_last and isinstance(current_element, Paragraph):
+        state.pop_prefix_parts(count=1)
+        state.write_part("> ")
+
+    return RendererFramedElement(element=current_element)
 
 
 def _blockquote_exit_hook(
@@ -65,6 +76,7 @@ def _blockquote_exit_hook(
     assert isinstance(frame, SequentialRendererFrame)
     assert isinstance(state, TextRendererState)
 
-    state.pop_prefix_parts(count=1)
+    if not isinstance(element.children[-1], Paragraph):
+        state.pop_prefix_parts(count=1)
 
     return None

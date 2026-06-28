@@ -66,6 +66,13 @@ class SequentialRendererFrame(RendererFrame):
     each child is consumed.
     """
 
+    @property
+    def is_current_child_last(self) -> bool:
+        """
+        Returns `True` if the child at `current_child_index` is the last in this frame.
+        """
+        return self.current_child_index == self.child_count - 1
+
     def increment_child_index(self) -> None:
         """
         Increments `current_child_index` by 1.
@@ -202,6 +209,36 @@ class SegmentedRendererFrame(RendererFrame):
             self.current_segment_index += 1
             self.current_child_index = 0
 
+    @property
+    def is_current_child_first_in_segment(self) -> bool:
+        """
+        Returns `True` if the child currently being processed is the first child
+        in its segment.
+
+        The check is performed by verifying that `current_child_index` equals `0`.
+
+        Returns:
+            `True` if the current child is the first in its segment, `False` otherwise.
+        """
+        return self.current_child_index == 0
+
+    @property
+    def is_current_child_last_in_segment(self) -> bool:
+        """
+        Returns `True` if the child currently being processed is the last child
+        in its segment.
+
+        The check is performed by comparing `current_child_index` against the
+        segment's total child count minus one.
+
+        Returns:
+            `True` if the current child is the last in its segment, `False` otherwise.
+        """
+        return (
+            self.current_child_index
+            == self.segment_child_counts[self.current_segment_index] - 1
+        )
+
     @override
     def record_rendered_child_type(self, child_type: type[Element] | None) -> None:
         """
@@ -226,10 +263,9 @@ class SegmentedRendererFrame(RendererFrame):
             child_type: The class of the child block that was just rendered,
                 or `None` if the child was empty or skipped.
         """
-        if (not self.should_allow_cross_segment_siblings) and (
-            self.current_child_index
-            == (self.segment_child_counts[self.current_segment_index] - 1)
-        ):
+        if (
+            not self.should_allow_cross_segment_siblings
+        ) and self.is_current_child_last_in_segment:
             self.last_child_type = None
         else:
             self.last_child_type = child_type

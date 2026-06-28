@@ -15,6 +15,6 @@ def _atx_heading_enter_hook(
 
     state.separate_from_previous_sibling()
     state.write_parts("#" * element.level, " ", element.content)
-    state.write_newline()
+    state.write_empty_line()
 
     return None

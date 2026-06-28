@@ -19,7 +19,8 @@ def _fenced_code_block_enter_hook(
         element.info_string,
         "\n",
         element.content,
+        element.markup,
     )
-    state.write_newline()
+    state.write_empty_line()
 
     return None

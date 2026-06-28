@@ -1,4 +1,4 @@
-from puku_markdown._utils.constants import INDENTED_CODE_BLOCK_MIN_INDENT
+from puku_markdown._utils.constants import INDENTED_CODE_BLOCK_MIN_INDENT_STR
 from puku_markdown.elements import IndentedCodeBlock
 from puku_markdown.renderer.framed_element import RendererFramedElement
 from puku_markdown.renderer.state import RendererState
@@ -15,7 +15,13 @@ def _indented_code_block_enter_hook(
     assert isinstance(state, TextRendererState)
 
     state.separate_from_previous_sibling()
-    state.write_parts(" " * INDENTED_CODE_BLOCK_MIN_INDENT, element.content)
-    state.write_newline()
+
+    if state.is_last_line_non_empty:
+        state.write_part(INDENTED_CODE_BLOCK_MIN_INDENT_STR)
+
+    with state.apply_inherited_prefix_parts(INDENTED_CODE_BLOCK_MIN_INDENT_STR):
+        state.write_parts(element.content)
+
+    state.write_empty_line()
 
     return None

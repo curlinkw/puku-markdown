@@ -1,4 +1,5 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from puku_markdown.renderer.state import RendererState
@@ -38,6 +39,12 @@ class TextRendererState(RendererState):
         (e.g., `"1. "`) is handled separately by the block's own rendering logic.
     """
 
+    def is_last_line_non_empty(self) -> bool:
+        """
+        Returns `True` if the output buffer has a last line and it is not empty.
+        """
+        return bool(self.rendered_text_lines) and bool(self.rendered_text_lines[-1])
+
     def write_parts(self, *parts: str, prepend_inherited_prefix: bool = True) -> None:
         """Writes string parts, handling line continuations and inherited prefixes.
 
@@ -75,9 +82,6 @@ class TextRendererState(RendererState):
         """
         content = "".join(parts)
 
-        if not content:
-            return
-
         lines = content.split("\n")
         first_line = lines[0]
 
@@ -114,32 +118,12 @@ class TextRendererState(RendererState):
         """
         self.write_parts(part, prepend_inherited_prefix=prepend_inherited_prefix)
 
-    def write_newline(self) -> None:
-        """Moves the cursor to the beginning of the next line without writing content.
+    def write_empty_line(self) -> None:
+        """Appends an empty line to the output buffer unconditionally.
 
-        This method is a convenience wrapper around
-        ``write_parts("\n", prepend_inherited_prefix=False)``. It finalises the
-        current line (if any) and positions the writer so that the **next**
-        ``write_parts()`` call will start writing on a fresh, empty line.
-
-        Important semantics:
-            - This method **unconditionally** advances to a new line. If the last
-            line in the buffer is already empty, calling this method appends
-            **another** empty line (i.e., it inserts an extra newline in the
-            output).
-            - The inherited prefix is **never** prepended to the empty line,
-            because this operation represents a line break, not content that
-            should receive prefixing.
-            - This is the equivalent of pressing "Enter" in a text editor without
-            typing any characters.
-
-        Use this method when you need to force a line break in the output, such as:
-            - Separating blocks of content.
-            - Moving to a new line before writing an empty line.
-            - Implementing line-based rendering where manual newline control is
-            required.
+        The inherited prefix is **not** prepended. Multiple calls stack blank lines.
         """
-        self.write_parts("\n", prepend_inherited_prefix=False)
+        self.rendered_text_lines.append("")
 
     def push_prefix_parts(self, *parts: str) -> None:
         """
@@ -188,6 +172,27 @@ class TextRendererState(RendererState):
         del self.inherited_prefix_parts[-count:]
         return popped
 
+    @contextmanager
+    def apply_inherited_prefix_parts(self, *parts: str) -> Iterator[None]:
+        """
+        Temporarily applies the given parts as inherited prefix for the duration of the block.
+
+        On entry, pushes `parts` onto the inherited prefix stack.
+        On exit, pops exactly that many parts, restoring the previous state.
+
+        This is the safe, scoped way to add inherited prefixes; it automatically
+        cleans up even if an exception is raised inside the context.
+
+        Example:
+            with state.apply_inherited_prefix_parts("> "):
+                state.write_parts("Hello")    # Outputs "> Hello"
+        """
+        self.push_prefix_parts(*parts)
+        try:
+            yield
+        finally:
+            self.pop_prefix_parts(len(parts))
+
     def separate_from_previous_sibling(
         self,
         excluded_sibling_types: Iterable[type] | None = None,
@@ -215,4 +220,5 @@ class TextRendererState(RendererState):
             excluded_sibling_types is None
             or self.previous_sibling_type not in excluded_sibling_types
         ):
-            self.write_part("\n")
+            self.write_part("")
+            self.write_empty_line()
