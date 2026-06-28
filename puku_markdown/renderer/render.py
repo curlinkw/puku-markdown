@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from puku_markdown.elements import Document
+from puku_markdown.elements import Document, Element
 from puku_markdown.renderer.framed_element import RendererFramedElement
 from puku_markdown.renderer.state import RendererState
 from puku_markdown.renderer.type_aliases import RendererElementHandlerRegistry
@@ -19,6 +19,14 @@ class _RendererFramedElementEntry:
     framed_element: RendererFramedElement
     """
     The framed element currently active on the stack.
+    """
+
+    previous_sibling_type: type[Element] | None
+    """
+    The class of the immediately preceding sibling block, or `None` if none exists.
+
+    Used to determine whether a separator (e.g., a blank line) is needed before
+    the next block.
     """
 
     is_entering: bool = True
@@ -53,6 +61,7 @@ def render(
             framed_element=RendererFramedElement(
                 element=document,
             ),
+            previous_sibling_type=None,
             is_entering=True,
         )
     ]
@@ -64,6 +73,7 @@ def render(
         current_element_handler = element_handler_registry[
             type(current_framed_element.element)
         ]
+        state.previous_sibling_type = current_framed_element_entry.previous_sibling_type
 
         if is_entering:
             current_element_handler.try_call_init_frame_hook(
@@ -94,9 +104,9 @@ def render(
 
         framed_element_entries.append(
             _RendererFramedElementEntry(
-                framed_element=next_framed_element, is_entering=True
+                framed_element=next_framed_element,
+                previous_sibling_type=current_frame.last_child_type,
+                is_entering=True,
             )
         )
-
-        state.previous_sibling_type = current_frame.last_child_type
-        current_frame.last_child_type = type(next_framed_element.element)
+        current_frame.record_rendered_child_type(type(next_framed_element.element))

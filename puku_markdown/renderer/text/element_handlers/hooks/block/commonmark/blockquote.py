@@ -30,6 +30,8 @@ def _blockquote_enter_hook(
     if not frame.has_more_children:
         return None
 
+    state.separate_from_previous_sibling()
+
     state.push_prefix_parts("> ")
 
     return RendererFramedElement(element=element.children[frame.current_child_index])

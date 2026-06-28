@@ -30,6 +30,9 @@ from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.paragra
 from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.setext_heading import (
     _setext_heading_enter_hook,
 )
+from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.thematic_break import (
+    _thematic_break_enter_hook,
+)
 from puku_markdown.renderer.text.element_handlers.hooks.document import (
     _document_after_child_hook,
     _document_enter_hook,
@@ -54,4 +57,5 @@ __all__ = [
     "_list_init_frame_hook",
     "_paragraph_enter_hook",
     "_setext_heading_enter_hook",
+    "_thematic_break_enter_hook",
 ]

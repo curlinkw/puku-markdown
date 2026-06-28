@@ -17,6 +17,7 @@ def _list_init_frame_hook(
         segment_count=len(element.items),
         segment_child_counts=[len(item.children) for item in element.items],
         last_child_type=None,
+        should_allow_cross_segment_siblings=False,
     )
 
     return None

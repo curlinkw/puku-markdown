@@ -13,6 +13,7 @@ def _link_reference_definition_block_enter_hook(
     assert framed_element.frame is None
     assert isinstance(state, TextRendererState)
 
+    state.separate_from_previous_sibling()
     state.write_parts(
         f"[{element.label}]: ", f"<{element.href}> ", f'"{element.title}"'
     )

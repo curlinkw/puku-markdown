@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from puku_markdown.renderer.state import RendererState
@@ -186,3 +187,32 @@ class TextRendererState(RendererState):
         popped = self.inherited_prefix_parts[-count:]
         del self.inherited_prefix_parts[-count:]
         return popped
+
+    def separate_from_previous_sibling(
+        self,
+        excluded_sibling_types: Iterable[type] | None = None,
+    ) -> None:
+        """
+        Writes a newline unless the previous sibling is one of the excluded types.
+
+        Separation is performed when:
+        - A previous sibling exists (`previous_sibling_type is not None`), AND
+        - `excluded_sibling_types` is `None` OR the previous sibling's type is
+        **not** in the excluded collection.
+
+        This is useful for block types that should **not** be separated by a blank
+        line (e.g., list items within a tight list may not need separation).
+
+        Args:
+            excluded_sibling_types: Types that **prevent** a separator if the
+                previous sibling matches one. If `None` (default), a separator is
+                inserted unconditionally (provided a previous sibling exists).
+        """
+        if self.previous_sibling_type is None:
+            return
+
+        if (
+            excluded_sibling_types is None
+            or self.previous_sibling_type not in excluded_sibling_types
+        ):
+            self.write_part("\n")

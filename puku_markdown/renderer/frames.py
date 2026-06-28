@@ -1,6 +1,6 @@
 from collections.abc import Sized
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, override
 
 from puku_markdown.elements import Element
 
@@ -24,6 +24,24 @@ class RendererFrame:
     The class of the most recently processed child block within this frame, or `None`
     if no child has been processed yet.
     """
+
+    def record_rendered_child_type(self, child_type: type[Element] | None) -> None:
+        """
+        Records the type of the child block that was just rendered within this frame.
+
+        This method updates `last_child_type` with the provided `child_type`.
+        It stores **only** the type. Element-specific logic (e.g., writing
+        content, handling attributes) is the responsibility of the renderer
+        hooks, not this method.
+
+        Subclasses may override this to apply additional logic (e.g., resetting
+        the sibling chain at segment boundaries).
+
+        Args:
+            child_type: The class of the child block that was just rendered,
+                or `None` if the child was empty or skipped.
+        """
+        self.last_child_type = child_type
 
 
 @dataclass(slots=True)
@@ -126,6 +144,18 @@ class SegmentedRendererFrame(RendererFrame):
     Represents the inner loop position. Incremented per child consumed.
     """
 
+    should_allow_cross_segment_siblings: bool = True
+    """
+    Determines whether children from different segments are allowed to be siblings.
+
+    - `True` (default): The sibling chain continues across segment boundaries.
+    The last child of the previous segment is considered the previous sibling
+    of the first child of the next segment.
+
+    - `False`: The sibling chain breaks at segment boundaries. The first child
+    of each new segment starts with no previous sibling (`last_child_type = None`).
+    """
+
     @property
     def has_more_children(self) -> bool:
         """
@@ -171,3 +201,35 @@ class SegmentedRendererFrame(RendererFrame):
         ):
             self.current_segment_index += 1
             self.current_child_index = 0
+
+    @override
+    def record_rendered_child_type(self, child_type: type[Element] | None) -> None:
+        """
+        Records the type of the child just rendered within this segment.
+
+        This method determines whether the rendered child should be considered
+        a sibling of children in other segments.
+
+        Semantics:
+            - If `should_allow_cross_segment_siblings` is `False` and this child
+            is the **last child of its segment**, the sibling chain is broken.
+            `last_child_type` is set to `None`, preventing the next segment's
+            first child from seeing the last child of this segment as its
+            previous sibling.
+            - Otherwise, `last_child_type` is set to the provided `child_type`.
+
+        The timing of the reset (on the last child of a segment, rather than on
+        the first child of the next segment) ensures that when the renderer
+        advances to the next segment, `previous_sibling_type` is already `None`.
+
+        Args:
+            child_type: The class of the child block that was just rendered,
+                or `None` if the child was empty or skipped.
+        """
+        if (not self.should_allow_cross_segment_siblings) and (
+            self.current_child_index
+            == (self.segment_child_counts[self.current_segment_index] - 1)
+        ):
+            self.last_child_type = None
+        else:
+            self.last_child_type = child_type

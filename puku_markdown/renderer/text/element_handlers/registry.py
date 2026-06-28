@@ -13,6 +13,7 @@ from puku_markdown.elements import (
     List,
     Paragraph,
     SetextHeading,
+    ThematicBreak,
 )
 from puku_markdown.renderer.element_handler import RendererElementHandler
 from puku_markdown.renderer.text.element_handlers.hooks import (
@@ -33,6 +34,7 @@ from puku_markdown.renderer.text.element_handlers.hooks import (
     _list_init_frame_hook,
     _paragraph_enter_hook,
     _setext_heading_enter_hook,
+    _thematic_break_enter_hook,
 )
 
 _TEXT_RENDERER_ELEMENT_HANDLERS: dict[type[Element], RendererElementHandler] = {
@@ -92,6 +94,12 @@ _TEXT_RENDERER_ELEMENT_HANDLERS: dict[type[Element], RendererElementHandler] = {
     ),
     SetextHeading: RendererElementHandler(
         enter_hook=_setext_heading_enter_hook,
+        after_child_hook=None,
+        exit_hook=None,
+        init_frame_hook=None,
+    ),
+    ThematicBreak: RendererElementHandler(
+        enter_hook=_thematic_break_enter_hook,
         after_child_hook=None,
         exit_hook=None,
         init_frame_hook=None,
