@@ -325,3 +325,19 @@ be recognized as a list marker by a conforming implementation.
 
 Source: CommonMark Spec 0.30, Section 5.2 - List Items.
 """
+
+DEFAULT_SETEXT_HEADING_MARKER_LENGTH: Final[int] = 3
+"""
+The default number of underline characters (`=` or `-`) to emit when rendering
+a Setext heading.
+
+While the CommonMark specification permits any length (including a single
+character), `3` is the conventional default used by most renderers. It is:
+
+- **The minimum practical choice** - visually distinct enough to be clear.
+- **Spec-compliant** - passes all CommonMark conformance tests.
+- **Widely adopted** - matches the output of many Markdown generators.
+
+Renderers that prefer aesthetics over brevity may opt to match the heading's
+text length dynamically, but for a static default, `3` is the idiomatic value.
+"""

@@ -27,6 +27,9 @@ from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.list im
 from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.paragraph import (
     _paragraph_enter_hook,
 )
+from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.setext_heading import (
+    _setext_heading_enter_hook,
+)
 from puku_markdown.renderer.text.element_handlers.hooks.document import (
     _document_after_child_hook,
     _document_enter_hook,
@@ -50,4 +53,5 @@ __all__ = [
     "_list_enter_hook",
     "_list_init_frame_hook",
     "_paragraph_enter_hook",
+    "_setext_heading_enter_hook",
 ]
