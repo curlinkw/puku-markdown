@@ -5,7 +5,7 @@
 [![Test Status](https://github.com/curlinkw/puku-markdown/actions/workflows/pytest.yaml/badge.svg)](https://github.com/curlinkw/puku-markdown/actions/workflows/pytest.yaml)
 [![License](https://img.shields.io/github/license/curlinkw/puku-markdown.svg)](https://github.com/curlinkw/puku-markdown/blob/main/LICENSE)
 
-A **CommonMark‑compliant** Markdown parser for block elements, written in pure Python with an **explicit stack** – no recursion, no hidden state, and a strong focus on readability and maintainability. Requires **Python 3.12 or higher**.
+A **CommonMark‑compliant** Markdown parser and **renderer** for block elements, written in pure Python with an **explicit stack** – no recursion, no hidden state, and a strong focus on readability and maintainability. Requires **Python 3.12 or higher**.
 
 ## Motivation
 
@@ -23,9 +23,10 @@ While `markdown-it-py` is a solid parser, its codebase has several pain points t
 - ✅ **CommonMark block elements** – headings, code blocks, lists, blockquotes, HTML blocks, thematic breaks, and more.
 - ✅ **Explicit stack** – no recursion, easy to reason about and port.
 - ✅ **Pure Python** – no external runtime dependencies.
+- ✅ **Renderer** – currently supports rendering back to plain Markdown (text).
 - ✅ **Tested against `markdown-it-py`** – we reuse their extensive test suite for compliance.
 
-> **Current status:** Block elements are fully supported. Inline elements (emphasis, links, images, etc.) are planned.
+> **Current status:** Block elements are fully supported for both parsing and rendering. Inline elements (emphasis, links, images, etc.) are planned.
 
 ## Installation
 
@@ -42,8 +43,9 @@ uv add puku-markdown
 ## Quick Usage
 
 ```python
-from puku_markdown import parse
+from puku_markdown import parse, render_to_text
 
+# Parse Markdown to an AST.
 document = parse("""
 # Heading
 
@@ -52,7 +54,10 @@ document = parse("""
 
 > A blockquote.
 """)
-print(document)
+
+# Render the AST back to Markdown text.
+rendered = render_to_text(document)
+print(rendered)
 ```
 
 ## Development
