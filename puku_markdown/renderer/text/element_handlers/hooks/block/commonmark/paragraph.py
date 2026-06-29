@@ -15,6 +15,5 @@ def _paragraph_enter_hook(
 
     state.separate_from_previous_sibling()
     state.write_parts(element.content)
-    state.write_empty_line()
 
     return None

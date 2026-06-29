@@ -54,6 +54,8 @@ def _blockquote_after_child_hook(
 
     frame.current_child_index += 1
 
+    state.ensure_last_line_is_empty()
+
     if not frame.has_more_children:
         return None
 
@@ -62,6 +64,9 @@ def _blockquote_after_child_hook(
     if frame.is_current_child_last and isinstance(current_element, Paragraph):
         state.pop_prefix_parts(count=1)
         state.write_part("> ")
+        state.write_empty_line()
+        state.write_part("> ")
+        frame.last_child_type = None
 
     return RendererFramedElement(element=current_element)
 

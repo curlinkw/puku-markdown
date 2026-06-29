@@ -31,6 +31,7 @@ from puku_markdown.renderer.text.element_handlers.hooks import (
     _link_reference_definition_block_enter_hook,
     _list_after_child_hook,
     _list_enter_hook,
+    _list_exit_hook,
     _list_init_frame_hook,
     _paragraph_enter_hook,
     _setext_heading_enter_hook,
@@ -83,7 +84,7 @@ _TEXT_RENDERER_ELEMENT_HANDLERS: dict[type[Element], RendererElementHandler] = {
     List: RendererElementHandler(
         enter_hook=_list_enter_hook,
         after_child_hook=_list_after_child_hook,
-        exit_hook=None,
+        exit_hook=_list_exit_hook,
         init_frame_hook=_list_init_frame_hook,
     ),
     Paragraph: RendererElementHandler(

@@ -2,6 +2,7 @@ from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
+from puku_markdown._utils.constants import EMPTY_STRING
 from puku_markdown.renderer.state import RendererState
 
 
@@ -39,6 +40,49 @@ class TextRendererState(RendererState):
         (e.g., `"1. "`) is handled separately by the block's own rendering logic.
     """
 
+    _separator_suppression_stack: list[bool] = field(default_factory=list)
+    """
+    Stack tracking whether separators (blank lines) are currently suppressed.
+    The top value is the suppression state for the current context.
+    """
+
+    @property
+    def is_suppressing_separators(self) -> bool:
+        """Returns `True` if separators are suppressed in the current context."""
+        return (
+            self._separator_suppression_stack[-1]
+            if self._separator_suppression_stack
+            else False
+        )
+
+    def enter_suppress_separators(self, suppress: bool) -> None:
+        """
+        Enters a context with the given separator suppression state.
+
+        Args:
+            suppress: `True` to suppress separators, `False` to allow them.
+        """
+        self._separator_suppression_stack.append(suppress)
+
+    def exit_suppress_separators(self) -> None:
+        """
+        Exits the current separator suppression context.
+
+        Raises:
+            RuntimeError: If the stack is empty (unbalanced enter/exit).
+        """
+        if not self._separator_suppression_stack:
+            raise RuntimeError("Cannot exit separator suppression: stack is empty.")
+        self._separator_suppression_stack.pop()
+
+    @property
+    def last_line(self) -> str | None:
+        """
+        Returns the last line in the output buffer, or `None` if the buffer is empty.
+        """
+        return self.rendered_text_lines[-1] if self.rendered_text_lines else None
+
+    @property
     def is_last_line_non_empty(self) -> bool:
         """
         Returns `True` if the output buffer has a last line and it is not empty.
@@ -123,7 +167,7 @@ class TextRendererState(RendererState):
 
         The inherited prefix is **not** prepended. Multiple calls stack blank lines.
         """
-        self.rendered_text_lines.append("")
+        self.rendered_text_lines.append(EMPTY_STRING)
 
     def push_prefix_parts(self, *parts: str) -> None:
         """
@@ -217,8 +261,41 @@ class TextRendererState(RendererState):
             return
 
         if (
-            excluded_sibling_types is None
-            or self.previous_sibling_type not in excluded_sibling_types
+            excluded_sibling_types is not None
+            and self.previous_sibling_type in excluded_sibling_types
         ):
-            self.write_part("")
+            return
+
+        self.ensure_last_line_is_empty()
+
+        if not self.is_suppressing_separators:
+            self.write_part(EMPTY_STRING)
+            self.write_empty_line()
+
+    def remove_trailing_empty_line(self) -> bool:
+        """
+        Removes the last line from the output buffer if it is exactly an empty string (`""`).
+
+        This method is intended to be called **only at the end** of a render pass
+        to clean up a trailing empty line that was added as a separator but is not
+        desired at the very end of the output.
+
+        Returns:
+            `True` if an empty line was removed, `False` otherwise.
+        """
+        if self.rendered_text_lines and (not self.rendered_text_lines[-1]):
+            self.rendered_text_lines.pop()
+            return True
+        return False
+
+    def ensure_last_line_is_empty(self) -> None:
+        """
+        Ensures that the last line in the output buffer is an empty string (`""`).
+
+        If the buffer is empty or the last line is not empty, appends an empty line.
+        If the last line is already empty, does nothing.
+
+        This method is idempotent: calling it multiple times has no additional effect.
+        """
+        if self.is_last_line_non_empty:
             self.write_empty_line()

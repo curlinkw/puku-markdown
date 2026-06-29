@@ -1,3 +1,4 @@
+from puku_markdown._utils.constants import SPACE_CHARACTER
 from puku_markdown.elements import AtxHeading
 from puku_markdown.renderer.framed_element import RendererFramedElement
 from puku_markdown.renderer.state import RendererState
@@ -14,7 +15,7 @@ def _atx_heading_enter_hook(
     assert isinstance(state, TextRendererState)
 
     state.separate_from_previous_sibling()
-    state.write_parts("#" * element.level, " ", element.content)
+    state.write_parts("#" * element.level, SPACE_CHARACTER, element.content)
     state.write_empty_line()
 
     return None

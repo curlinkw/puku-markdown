@@ -14,9 +14,12 @@ def _link_reference_definition_block_enter_hook(
     assert isinstance(state, TextRendererState)
 
     state.separate_from_previous_sibling()
-    state.write_parts(
-        f"[{element.label}]: ", f"<{element.href}> ", f'"{element.title}"'
-    )
+
+    state.write_parts(f"[{element.label}]: ", f"<{element.href}> ")
+
+    if element.title is not None:
+        state.write_part(f'"{element.title}"')
+
     state.write_empty_line()
 
     return None

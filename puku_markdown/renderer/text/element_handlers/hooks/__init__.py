@@ -22,6 +22,7 @@ from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.link_re
 from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.list import (
     _list_after_child_hook,
     _list_enter_hook,
+    _list_exit_hook,
     _list_init_frame_hook,
 )
 from puku_markdown.renderer.text.element_handlers.hooks.block.commonmark.paragraph import (
@@ -54,6 +55,7 @@ __all__ = [
     "_link_reference_definition_block_enter_hook",
     "_list_after_child_hook",
     "_list_enter_hook",
+    "_list_exit_hook",
     "_list_init_frame_hook",
     "_paragraph_enter_hook",
     "_setext_heading_enter_hook",

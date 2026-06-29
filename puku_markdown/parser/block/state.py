@@ -4,6 +4,7 @@ from puku_markdown._utils.constants import (
     EMPTY_STRING,
     INDENTED_CODE_BLOCK_MIN_INDENT,
     LINE_FEED_CHARACTER,
+    SPACE_CHARACTER,
 )
 from puku_markdown._utils.metrics import commonmark_char_width
 from puku_markdown._utils.predicates import is_space_or_tab
@@ -386,7 +387,7 @@ class BlockParserState:
             self.source[retained_indent_start.charno : end_charno]
             if (retained_indent_start.inner_colno == 0)
             else (
-                " " * retained_indent_start.remaining_columns
+                SPACE_CHARACTER * retained_indent_start.remaining_columns
                 + self.source[retained_indent_start.charno + 1 : end_charno]
             )
         )

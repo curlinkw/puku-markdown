@@ -14,7 +14,11 @@ def _html_block_enter_hook(
     assert isinstance(state, TextRendererState)
 
     state.separate_from_previous_sibling()
-    state.write_part(element.content)
-    state.write_empty_line()
+
+    state.write_part(
+        element.content[:-1] if element.content[-1] == "\n" else element.content
+    )
+
+    state.ensure_last_line_is_empty()
 
     return None
